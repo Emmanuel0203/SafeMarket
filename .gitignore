@@ -1,0 +1,86 @@
+# =========================================
+# VARIABLES DE ENTORNO
+# =========================================
+**/.env
+**/.env.local
+**/.env.production
+**/.env.development
+
+# Permitir ejemplos
+!.env.example
+
+# =========================================
+# PYTHON / FASTAPI
+# =========================================
+**/__pycache__/
+**/*.py[cod]
+**/*$py.class
+
+# Virtual environments
+**/venv/
+**/.venv/
+**/.env/
+**/env/
+**/entorno/
+**/.entorno/
+
+# Pytest
+**/.pytest_cache/
+**/.coverage
+**/htmlcov/
+
+# Logs
+**/*.log
+
+# SQLite
+**/*.sqlite3
+**/*.db
+
+# =========================================
+# NODE / FRONTEND
+# =========================================
+**/node_modules/
+**/dist/
+**/build/
+
+# Vite
+**/.vite/
+
+# =========================================
+# IDES
+# =========================================
+.vscode/
+.idea/
+
+# =========================================
+# SISTEMA OPERATIVO
+# =========================================
+.DS_Store
+Thumbs.db
+
+# =========================================
+# ARCHIVOS TEMPORALES
+# =========================================
+*.tmp
+*.temp
+
+# =========================================
+# BASES DE DATOS Y BACKUPS
+# =========================================
+*.sql
+
+# EXCEPCIÓN:
+# Si quieres subir schemas SQL manuales:
+!schema_improved.sql
+
+# =========================================
+# ARCHIVOS BINARIOS
+# =========================================
+*.exe
+*.dll
+*.so
+
+# =========================================
+# CACHE GENERAL
+# =========================================
+.cache/
