@@ -1,15 +1,15 @@
 """
 Punto de entrada de la aplicación FastAPI - SafeMarket API.
 """
-from routers import transactions
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.openapi.utils import get_openapi
 import logging
 
 from db import Base, engine, test_connection
 from db.models_enhanced import *  # noqa: F401, F403
-from routers import auth, users
+from routers import auth, users, transactions, ml
 from core.config import (
     ALLOWED_ORIGINS,
     API_TITLE,
@@ -45,6 +45,29 @@ app = FastAPI(
     openapi_url="/api/v1/openapi.json" if ENVIRONMENT == "development" else None
 )
 
+# ✅ Botón Authorize con JWT en los docs
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+    openapi_schema = get_openapi(
+        title=API_TITLE,
+        version=API_VERSION,
+        description=API_DESCRIPTION,
+        routes=app.routes,
+    )
+    openapi_schema["components"]["securitySchemes"] = {
+        "BearerAuth": {
+            "type": "http",
+            "scheme": "bearer",
+            "bearerFormat": "JWT",
+        }
+    }
+    openapi_schema["security"] = [{"BearerAuth": []}]
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+app.openapi = custom_openapi
+
 # === MIDDLEWARE ===
 app.add_middleware(
     CORSMiddleware,
@@ -66,6 +89,7 @@ app.include_router(transactions.router)
 # app.include_router(scoring.router)
 # app.include_router(feedback.router)
 # app.include_router(dashboard.router)
+app.include_router(ml.router)
 
 
 # === HEALTH CHECK ===
