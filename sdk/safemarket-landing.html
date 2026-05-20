@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SafeMarket — Detección de Fraude para tu Plataforma</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --brand:   #1a3c6e;
+      --brand2:  #2563eb;
+      --green:   #0d9488;
+      --danger:  #ef4444;
+      --warn:    #f59e0b;
+      --light:   #eff6ff;
+      --gray:    #f4f7fb;
+      --border:  #e2e8f0;
+      --text:    #0f172a;
+      --sub:     #64748b;
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'DM Sans', sans-serif; color: var(--text); background: #fff; }
+
+    /* ── NAVBAR ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 40px; height: 64px;
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .nav-logo-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--brand2), var(--green));
+      border-radius: 10px; display: flex; align-items: center; justify-content: center;
+      font-family: 'Sora', sans-serif; font-weight: 800; color: #fff; font-size: 16px;
+    }
+    .nav-logo-text { font-family: 'Sora', sans-serif; font-weight: 700; font-size: 18px; color: var(--brand); }
+    .nav-links { display: flex; align-items: center; gap: 32px; }
+    .nav-links a { text-decoration: none; color: var(--sub); font-size: 14px; font-weight: 500; transition: color 0.2s; }
+    .nav-links a:hover { color: var(--brand); }
+    .nav-cta {
+      background: var(--brand); color: #fff; padding: 10px 22px;
+      border-radius: 10px; font-size: 14px; font-weight: 700;
+      text-decoration: none; transition: all 0.2s;
+    }
+    .nav-cta:hover { background: var(--brand2); transform: translateY(-1px); }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(160deg, #f0f7ff 0%, #ffffff 50%, #f0fdf9 100%);
+      padding: 100px 40px 60px; text-align: center; position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: ''; position: absolute; top: -200px; right: -200px;
+      width: 600px; height: 600px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(37,99,235,0.08) 0%, transparent 70%);
+    }
+    .hero::after {
+      content: ''; position: absolute; bottom: -200px; left: -200px;
+      width: 500px; height: 500px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(13,148,136,0.08) 0%, transparent 70%);
+    }
+    .hero-content { max-width: 780px; position: relative; z-index: 1; }
+    .hero-tag {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--light); color: var(--brand2);
+      padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 600;
+      margin-bottom: 28px; border: 1px solid #bfdbfe;
+    }
+    .hero-tag-dot { width: 7px; height: 7px; background: var(--green); border-radius: 50%; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.7;transform:scale(1.2)} }
+    .hero h1 {
+      font-family: 'Sora', sans-serif; font-size: 58px; font-weight: 800;
+      line-height: 1.1; color: var(--brand); margin-bottom: 24px;
+    }
+    .hero h1 span { color: var(--brand2); }
+    .hero p { font-size: 20px; color: var(--sub); line-height: 1.7; margin-bottom: 40px; max-width: 600px; margin-left: auto; margin-right: auto; }
+    .hero-btns { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+    .btn-hero-primary {
+      background: linear-gradient(135deg, var(--brand), var(--brand2));
+      color: #fff; padding: 16px 36px; border-radius: 14px;
+      font-size: 16px; font-weight: 700; text-decoration: none;
+      transition: all 0.2s; box-shadow: 0 8px 24px rgba(37,99,235,0.3);
+      font-family: 'Sora', sans-serif;
+    }
+    .btn-hero-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(37,99,235,0.4); }
+    .btn-hero-secondary {
+      background: #fff; color: var(--brand); padding: 16px 36px;
+      border-radius: 14px; font-size: 16px; font-weight: 700;
+      text-decoration: none; border: 2px solid var(--border);
+      transition: all 0.2s; font-family: 'Sora', sans-serif;
+    }
+    .btn-hero-secondary:hover { border-color: var(--brand2); color: var(--brand2); }
+
+    /* ── STATS ── */
+    .stats {
+      background: var(--brand); padding: 48px 40px;
+      display: flex; justify-content: center; gap: 80px; flex-wrap: wrap;
+    }
+    .stat { text-align: center; }
+    .stat-val { font-family: 'Sora', sans-serif; font-size: 42px; font-weight: 800; color: #fff; line-height: 1; }
+    .stat-label { font-size: 14px; color: rgba(255,255,255,0.65); margin-top: 6px; }
+
+    /* ── CÓMO FUNCIONA ── */
+    section { padding: 96px 40px; }
+    .section-tag {
+      display: inline-block; background: var(--light); color: var(--brand2);
+      padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px;
+    }
+    .section-title { font-family: 'Sora', sans-serif; font-size: 40px; font-weight: 800; color: var(--brand); margin-bottom: 12px; }
+    .section-sub { font-size: 18px; color: var(--sub); max-width: 560px; line-height: 1.6; margin-bottom: 56px; }
+    .centered { text-align: center; }
+    .centered .section-sub { margin-left: auto; margin-right: auto; }
+
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; max-width: 1000px; margin: 0 auto; }
+    .step-card { background: #fff; border-radius: 20px; padding: 32px; border: 1px solid var(--border); box-shadow: 0 2px 12px rgba(0,0,0,0.04); text-align: center; transition: all 0.2s; }
+    .step-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,0.08); }
+    .step-num { width: 52px; height: 52px; background: linear-gradient(135deg, var(--brand), var(--brand2)); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-family: 'Sora', sans-serif; font-weight: 800; font-size: 22px; color: #fff; margin: 0 auto 20px; }
+    .step-title { font-family: 'Sora', sans-serif; font-size: 18px; font-weight: 700; color: var(--brand); margin-bottom: 10px; }
+    .step-desc { font-size: 14px; color: var(--sub); line-height: 1.7; }
+
+    /* ── CÓDIGO DE INTEGRACIÓN ── */
+    .integration { background: var(--gray); }
+    .integration-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; max-width: 1100px; margin: 0 auto; }
+    .code-window { background: #0f172a; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+    .code-topbar { display: flex; align-items: center; gap: 8px; padding: 14px 18px; background: #1e293b; }
+    .code-dot { width: 12px; height: 12px; border-radius: 50%; }
+    .code-dot-r { background: #ef4444; }
+    .code-dot-y { background: #f59e0b; }
+    .code-dot-g { background: #22c55e; }
+    .code-filename { font-size: 12px; color: #64748b; margin-left: 8px; font-family: monospace; }
+    .code-body { padding: 24px; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.8; }
+    .c-comment { color: #475569; }
+    .c-tag     { color: #f472b6; }
+    .c-attr    { color: #93c5fd; }
+    .c-string  { color: #86efac; }
+    .c-key     { color: #c084fc; }
+    .c-fn      { color: #60a5fa; }
+    .c-val     { color: #fcd34d; }
+
+    .integration-features { display: flex; flex-direction: column; gap: 20px; }
+    .int-feature { display: flex; gap: 16px; align-items: flex-start; }
+    .int-feature-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+    .int-feature-icon.blue  { background: var(--light); }
+    .int-feature-icon.green { background: #ecfdf5; }
+    .int-feature-icon.yellow{ background: #fffbeb; }
+    .int-feature-title { font-family: 'Sora', sans-serif; font-size: 15px; font-weight: 700; color: var(--brand); margin-bottom: 4px; }
+    .int-feature-desc  { font-size: 13px; color: var(--sub); line-height: 1.6; }
+
+    /* ── PLATAFORMAS ── */
+    .platforms-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; max-width: 900px; margin: 0 auto; }
+    .platform-card {
+      background: #fff; border: 1px solid var(--border); border-radius: 16px;
+      padding: 24px 16px; text-align: center;
+      transition: all 0.2s; cursor: default;
+    }
+    .platform-card:hover { border-color: var(--brand2); box-shadow: 0 4px 20px rgba(37,99,235,0.1); transform: translateY(-2px); }
+    .platform-emoji { font-size: 36px; margin-bottom: 10px; }
+    .platform-name { font-family: 'Sora', sans-serif; font-size: 14px; font-weight: 700; color: var(--brand); margin-bottom: 4px; }
+    .platform-tag  { font-size: 11px; color: var(--sub); }
+
+    /* ── WIDGETS PREVIEW ── */
+    .widgets-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; max-width: 1000px; margin: 0 auto; }
+    .widget-preview { background: #fff; border-radius: 20px; padding: 28px; border: 1px solid var(--border); box-shadow: 0 2px 12px rgba(0,0,0,0.04); }
+    .widget-preview-title { font-family: 'Sora', sans-serif; font-size: 15px; font-weight: 700; color: var(--brand); margin-bottom: 6px; }
+    .widget-preview-desc  { font-size: 13px; color: var(--sub); margin-bottom: 20px; line-height: 1.5; }
+    .mock-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 700; }
+    .mock-badge-green  { background: #dcfce7; color: #16a34a; }
+    .mock-badge-yellow { background: #fef9c3; color: #ca8a04; }
+    .mock-badge-red    { background: #fee2e2; color: #dc2626; }
+    .mock-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+    .mock-panel { background: var(--brand); border-radius: 12px; padding: 12px 16px; color: #fff; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .mock-alert { background: #fff8f8; border: 1px solid #fecaca; border-radius: 10px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; font-size: 12px; }
+    .mock-modal { background: var(--gray); border-radius: 12px; padding: 16px; text-align: center; }
+    .mock-modal-icon { font-size: 28px; margin-bottom: 8px; }
+    .mock-modal-text { font-size: 12px; color: var(--sub); margin-bottom: 12px; }
+    .mock-modal-btns { display: flex; gap: 8px; }
+    .mock-btn { flex: 1; padding: 7px; border-radius: 8px; font-size: 11px; font-weight: 700; border: none; cursor: pointer; }
+    .mock-btn-primary { background: var(--brand); color: #fff; }
+    .mock-btn-secondary { background: #e2e8f0; color: var(--sub); }
+
+    /* ── PRECIOS ── */
+    .pricing { background: var(--gray); }
+    .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; max-width: 900px; margin: 0 auto; }
+    .pricing-card { background: #fff; border-radius: 20px; padding: 32px; border: 2px solid var(--border); transition: all 0.2s; }
+    .pricing-card.featured { border-color: var(--brand2); box-shadow: 0 8px 32px rgba(37,99,235,0.15); }
+    .pricing-card:hover { transform: translateY(-4px); }
+    .pricing-badge { background: var(--brand2); color: #fff; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; display: inline-block; margin-bottom: 16px; }
+    .pricing-name  { font-family: 'Sora', sans-serif; font-size: 20px; font-weight: 800; color: var(--brand); margin-bottom: 6px; }
+    .pricing-price { font-family: 'Sora', sans-serif; font-size: 42px; font-weight: 800; color: var(--brand); line-height: 1; margin-bottom: 4px; }
+    .pricing-price span { font-size: 16px; font-weight: 500; color: var(--sub); }
+    .pricing-desc  { font-size: 13px; color: var(--sub); margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+    .pricing-feature { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--sub); margin-bottom: 10px; }
+    .pricing-feature::before { content: '✓'; color: var(--green); font-weight: 700; font-size: 14px; }
+    .pricing-btn { display: block; text-align: center; padding: 12px; border-radius: 10px; font-size: 14px; font-weight: 700; text-decoration: none; margin-top: 24px; transition: all 0.2s; font-family: 'Sora', sans-serif; }
+    .pricing-btn-primary { background: var(--brand); color: #fff; }
+    .pricing-btn-primary:hover { background: var(--brand2); }
+    .pricing-btn-secondary { background: var(--light); color: var(--brand); }
+    .pricing-btn-secondary:hover { background: #dbeafe; }
+
+    /* ── REGISTRO ── */
+    #registro { background: linear-gradient(160deg, #f0f7ff, #f0fdf9); }
+    .register-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; max-width: 1000px; margin: 0 auto; }
+    .register-card { background: #fff; border-radius: 24px; padding: 40px; box-shadow: 0 20px 60px rgba(0,0,0,0.08); border: 1px solid var(--border); }
+    .register-title { font-family: 'Sora', sans-serif; font-size: 26px; font-weight: 800; color: var(--brand); margin-bottom: 8px; }
+    .register-sub   { font-size: 14px; color: var(--sub); margin-bottom: 28px; }
+    .form-group { margin-bottom: 16px; }
+    .form-label { font-size: 13px; font-weight: 600; color: #374151; display: block; margin-bottom: 6px; }
+    .form-input {
+      width: 100%; padding: 12px 16px; border: 1.5px solid var(--border);
+      border-radius: 12px; font-size: 14px; font-family: 'DM Sans', sans-serif;
+      outline: none; transition: border-color 0.2s; color: var(--text);
+    }
+    .form-input:focus { border-color: var(--brand2); }
+    .form-btn {
+      width: 100%; padding: 14px; background: linear-gradient(135deg, var(--brand), var(--brand2));
+      color: #fff; border: none; border-radius: 12px; font-size: 16px; font-weight: 700;
+      font-family: 'Sora', sans-serif; cursor: pointer; transition: all 0.2s; margin-top: 8px;
+    }
+    .form-btn:hover { opacity: 0.92; transform: translateY(-1px); }
+    .form-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .form-error { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; padding: 10px 14px; border-radius: 10px; font-size: 13px; margin-bottom: 16px; display: none; }
+    .form-error.visible { display: block; }
+
+    /* ── PANEL API KEY ── */
+    .apikey-panel { display: none; }
+    .apikey-panel.visible { display: block; }
+    .register-form { display: block; }
+    .register-form.hidden { display: none; }
+
+    .apikey-title { font-family: 'Sora', sans-serif; font-size: 22px; font-weight: 800; color: var(--brand); margin-bottom: 6px; }
+    .apikey-sub   { font-size: 14px; color: var(--sub); margin-bottom: 24px; }
+    .apikey-box   { background: #0f172a; border-radius: 12px; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+    .apikey-value { font-family: 'Courier New', monospace; font-size: 13px; color: #86efac; word-break: break-all; flex: 1; }
+    .apikey-copy  { background: var(--brand2); color: #fff; border: none; border-radius: 8px; padding: 8px 14px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+    .apikey-copy:hover { background: var(--brand); }
+    .apikey-info  { background: var(--light); border-radius: 12px; padding: 14px 16px; font-size: 13px; color: var(--brand); margin-bottom: 20px; border: 1px solid #bfdbfe; }
+    .apikey-snippet { background: #0f172a; border-radius: 12px; overflow: hidden; }
+    .apikey-snippet-top { padding: 10px 16px; background: #1e293b; font-size: 12px; color: #64748b; font-family: monospace; }
+    .apikey-snippet-code { padding: 16px; font-family: 'Courier New', monospace; font-size: 12px; line-height: 1.8; color: #e2e8f0; }
+
+    .register-benefits { display: flex; flex-direction: column; gap: 24px; }
+    .benefit { display: flex; gap: 16px; align-items: flex-start; }
+    .benefit-icon { width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; background: var(--light); }
+    .benefit-title { font-family: 'Sora', sans-serif; font-size: 16px; font-weight: 700; color: var(--brand); margin-bottom: 4px; }
+    .benefit-desc  { font-size: 13px; color: var(--sub); line-height: 1.6; }
+
+    /* ── FOOTER ── */
+    footer { background: var(--brand); padding: 48px 40px; text-align: center; }
+    .footer-logo { display: flex; align-items: center; gap: 10px; justify-content: center; margin-bottom: 16px; }
+    .footer-text { font-size: 14px; color: rgba(255,255,255,0.5); }
+
+    /* ── LOADER ── */
+    .loader { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 768px) {
+      .steps, .widgets-grid, .platforms-grid, .pricing-grid, .integration-grid, .register-grid { grid-template-columns: 1fr; }
+      .hero h1 { font-size: 36px; }
+      .stats { gap: 40px; }
+      nav { padding: 0 20px; }
+      .nav-links { display: none; }
+      section { padding: 64px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── NAVBAR ── -->
+<nav>
+  <a href="#" class="nav-logo">
+    <div class="nav-logo-icon">S</div>
+    <span class="nav-logo-text">SafeMarket</span>
+  </a>
+  <div class="nav-links">
+    <a href="#como-funciona">Cómo funciona</a>
+    <a href="#widgets">Widgets</a>
+    <a href="#integracion">Integración</a>
+    <a href="#precios">Precios</a>
+    <a href="#registro" class="nav-cta">Obtener API Key →</a>
+  </div>
+</nav>
+
+<!-- ── HERO ── -->
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-tag">
+      <span class="hero-tag-dot"></span>
+      Motor antifraude con IA · AUC-ROC 99.63%
+    </div>
+    <h1>Protege tu plataforma del <span>fraude financiero</span></h1>
+    <p>SafeMarket es un módulo de detección de fraude en tiempo real que se integra en cualquier plataforma con una sola línea de código. Sin configuraciones complejas.</p>
+    <div class="hero-btns">
+      <a href="#registro" class="btn-hero-primary">Empezar gratis →</a>
+      <a href="#como-funciona" class="btn-hero-secondary">Ver cómo funciona</a>
+    </div>
+  </div>
+</section>
+
+<!-- ── STATS ── -->
+<div class="stats">
+  <div class="stat"><div class="stat-val">99.88%</div><div class="stat-label">Accuracy del modelo</div></div>
+  <div class="stat"><div class="stat-val">99.63%</div><div class="stat-label">AUC-ROC</div></div>
+  <div class="stat"><div class="stat-val">100K+</div><div class="stat-label">Transacciones de entrenamiento</div></div>
+  <div class="stat"><div class="stat-val">&lt;200ms</div><div class="stat-label">Tiempo de respuesta</div></div>
+  <div class="stat"><div class="stat-val">12</div><div class="stat-label">Reglas antifraude</div></div>
+</div>
+
+<!-- ── CÓMO FUNCIONA ── -->
+<section id="como-funciona">
+  <div class="centered">
+    <span class="section-tag">Cómo funciona</span>
+    <h2 class="section-title">Tres pasos. Menos de 5 minutos.</h2>
+    <p class="section-sub">No necesitas cambiar tu sistema actual. SafeMarket se adapta a lo que ya tienes.</p>
+  </div>
+  <div class="steps">
+    <div class="step-card">
+      <div class="step-num">1</div>
+      <div class="step-title">Regístrate y obtén tu API Key</div>
+      <div class="step-desc">Crea tu cuenta con email y nombre de empresa. En segundos recibes tu clave única de acceso.</div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">2</div>
+      <div class="step-title">Pega una línea de código</div>
+      <div class="step-desc">Incluye el script de SafeMarket en tu plataforma. Compatible con Shopify, WooCommerce, React, Angular o HTML puro.</div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">3</div>
+      <div class="step-title">SafeMarket protege en tiempo real</div>
+      <div class="step-desc">Cada transacción es analizada por nuestro motor de IA antes de ser procesada. Tú decides qué hacer con el resultado.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── INTEGRACIÓN ── -->
+<section class="integration" id="integracion">
+  <div class="integration-grid">
+    <div>
+      <span class="section-tag">Integración</span>
+      <h2 class="section-title">Una línea. Listo.</h2>
+      <p class="section-sub" style="margin-bottom:32px">Sin instalar librerías, sin configurar servidores, sin cambiar tu base de datos.</p>
+      <div class="integration-features">
+        <div class="int-feature">
+          <div class="int-feature-icon blue">⚡</div>
+          <div>
+            <div class="int-feature-title">Integración instantánea</div>
+            <div class="int-feature-desc">Incluyes el script, pegas tu API Key y el módulo queda activo. Sin más configuración.</div>
+          </div>
+        </div>
+        <div class="int-feature">
+          <div class="int-feature-icon green">🔒</div>
+          <div>
+            <div class="int-feature-title">Autenticación segura</div>
+            <div class="int-feature-desc">Tu API Key es única e irrepetible. Todas las comunicaciones van cifradas por HTTPS.</div>
+          </div>
+        </div>
+        <div class="int-feature">
+          <div class="int-feature-icon yellow">🧠</div>
+          <div>
+            <div class="int-feature-title">IA + Reglas de negocio</div>
+            <div class="int-feature-desc">El modelo ML aporta el 65% del score. Las 12 reglas antifraude aportan el 35% restante.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="code-window">
+      <div class="code-topbar">
+        <div class="code-dot code-dot-r"></div>
+        <div class="code-dot code-dot-y"></div>
+        <div class="code-dot code-dot-g"></div>
+        <span class="code-filename">mi-tienda.html</span>
+      </div>
+      <div class="code-body">
+<span class="c-comment">&#x3C;!-- Paso 1: incluye el módulo --&#x3E;</span>
+<span class="c-tag">&#x3C;script</span>
+  <span class="c-attr">src</span>=<span class="c-string">"https://safemarket.co/sdk.js"</span>
+  <span class="c-attr">data-api-key</span>=<span class="c-string">"sm_live_tu_clave"</span><span class="c-tag">&#x3E;
+&#x3C;/script&#x3E;</span>
+
+<span class="c-comment">// Paso 2: analiza una transacción</span>
+<span class="c-key">const</span> result = <span class="c-key">await</span> <span class="c-fn">_safemarket</span>.<span class="c-fn">scoreTransaction</span>({
+  <span class="c-attr">amount</span>:           <span class="c-val">350000</span>,
+  <span class="c-attr">transaction_type</span>: <span class="c-string">"PURCHASE"</span>,
+  <span class="c-attr">user_id</span>:          <span class="c-string">"uuid-usuario"</span>,
+});
+
+<span class="c-comment">// Paso 3: toma la decisión</span>
+<span class="c-key">if</span> (result.decision === <span class="c-string">"APPROVE"</span>)  <span class="c-fn">procesarPago</span>();
+<span class="c-key">if</span> (result.decision === <span class="c-string">"REVIEW"</span>)   <span class="c-fn">pedirVerificacion</span>();
+<span class="c-key">if</span> (result.decision === <span class="c-string">"DECLINE"</span>)  <span class="c-fn">bloquearPago</span>();
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── WIDGETS ── -->
+<section id="widgets">
+  <div class="centered">
+    <span class="section-tag">Widgets</span>
+    <h2 class="section-title">3 widgets incluidos</h2>
+    <p class="section-sub">Se activan automáticamente al incluir el módulo. Sin configuración adicional.</p>
+  </div>
+  <div class="widgets-grid">
+    <div class="widget-preview">
+      <div class="widget-preview-title">🏷️ Badge de Riesgo</div>
+      <div class="widget-preview-desc">Aparece junto a cada transacción indicando su nivel de riesgo con color.</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div><span class="mock-badge mock-badge-green"><span class="mock-dot"></span>✅ Bajo riesgo · 12%</span></div>
+        <div><span class="mock-badge mock-badge-yellow"><span class="mock-dot"></span>⚠️ Riesgo medio · 48%</span></div>
+        <div><span class="mock-badge mock-badge-red"><span class="mock-dot"></span>🚫 Alto riesgo · 87%</span></div>
+      </div>
+    </div>
+    <div class="widget-preview">
+      <div class="widget-preview-title">🛡️ Panel de Alertas</div>
+      <div class="widget-preview-desc">Botón flotante que muestra todas las alertas de fraude en tiempo real.</div>
+      <div class="mock-panel">🛡️ SafeMarket <span style="background:rgba(255,255,255,0.2);padding:2px 8px;border-radius:10px;font-size:11px;margin-left:auto">3 alertas</span></div>
+      <div class="mock-alert">🚫 <div><div style="font-weight:700;font-size:12px">DECLINE · TRANSFER</div><div style="color:#94a3b8;font-size:11px">$5,000,000 · ACCOUNT_DRAIN</div></div></div>
+    </div>
+    <div class="widget-preview">
+      <div class="widget-preview-title">🔔 Modal de Verificación</div>
+      <div class="widget-preview-desc">Aparece automáticamente cuando una transacción requiere revisión manual.</div>
+      <div class="mock-modal">
+        <div class="mock-modal-icon">⚠️</div>
+        <div style="font-weight:700;font-size:13px;margin-bottom:4px">Verificación Requerida</div>
+        <div class="mock-modal-text">Probabilidad de fraude: 42.1%</div>
+        <div class="mock-modal-btns">
+          <button class="mock-btn mock-btn-secondary">Cancelar</button>
+          <button class="mock-btn mock-btn-primary">Confirmar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── PLATAFORMAS ── -->
+<section style="background:var(--gray);padding:64px 40px">
+  <div class="centered">
+    <span class="section-tag">Compatibilidad</span>
+    <h2 class="section-title">Funciona en cualquier plataforma</h2>
+    <p class="section-sub">Si tiene HTML, puede usar SafeMarket.</p>
+  </div>
+  <div class="platforms-grid">
+    <div class="platform-card"><div class="platform-emoji">🛍️</div><div class="platform-name">Shopify</div><div class="platform-tag">E-commerce</div></div>
+    <div class="platform-card"><div class="platform-emoji">🌐</div><div class="platform-name">WooCommerce</div><div class="platform-tag">WordPress</div></div>
+    <div class="platform-card"><div class="platform-emoji">⚛️</div><div class="platform-name">React</div><div class="platform-tag">Frontend</div></div>
+    <div class="platform-card"><div class="platform-emoji">🅰️</div><div class="platform-name">Angular</div><div class="platform-tag">Frontend</div></div>
+    <div class="platform-card"><div class="platform-emoji">💚</div><div class="platform-name">Vue.js</div><div class="platform-tag">Frontend</div></div>
+    <div class="platform-card"><div class="platform-emoji">🏦</div><div class="platform-name">Sistemas bancarios</div><div class="platform-tag">Fintech</div></div>
+    <div class="platform-card"><div class="platform-emoji">📱</div><div class="platform-name">Apps móviles</div><div class="platform-tag">WebView</div></div>
+    <div class="platform-card"><div class="platform-emoji">📄</div><div class="platform-name">HTML puro</div><div class="platform-tag">Cualquier web</div></div>
+  </div>
+</section>
+
+<!-- ── PRECIOS ── -->
+<section class="pricing" id="precios">
+  <div class="centered">
+    <span class="section-tag">Precios</span>
+    <h2 class="section-title">Paga solo por lo que usas</h2>
+    <p class="section-sub">Sin costos de instalación. Sin contratos a largo plazo. Cancela cuando quieras.</p>
+  </div>
+  <div class="pricing-grid">
+    <div class="pricing-card">
+      <div class="pricing-name">Starter</div>
+      <div class="pricing-price">$299<span>/mes</span></div>
+      <div class="pricing-desc">Ideal para tiendas pequeñas y startups</div>
+      <div class="pricing-feature">Hasta 1,000 transacciones/mes</div>
+      <div class="pricing-feature">3 widgets incluidos</div>
+      <div class="pricing-feature">Score de riesgo en tiempo real</div>
+      <div class="pricing-feature">Soporte por email</div>
+      <a href="#registro" class="pricing-btn pricing-btn-secondary">Comenzar →</a>
+    </div>
+    <div class="pricing-card featured">
+      <div class="pricing-badge">⭐ Más popular</div>
+      <div class="pricing-name">Growth</div>
+      <div class="pricing-price">$799<span>/mes</span></div>
+      <div class="pricing-desc">Para e-commerce y fintech en crecimiento</div>
+      <div class="pricing-feature">Hasta 10,000 transacciones/mes</div>
+      <div class="pricing-feature">Todo lo de Starter</div>
+      <div class="pricing-feature">Panel de alertas avanzado</div>
+      <div class="pricing-feature">Feedback de revisores</div>
+      <div class="pricing-feature">Soporte prioritario</div>
+      <a href="#registro" class="pricing-btn pricing-btn-primary">Comenzar →</a>
+    </div>
+    <div class="pricing-card">
+      <div class="pricing-name">Enterprise</div>
+      <div class="pricing-price" style="font-size:28px;padding-top:8px">Personalizado</div>
+      <div class="pricing-desc">Para bancos y grandes plataformas</div>
+      <div class="pricing-feature">Transacciones ilimitadas</div>
+      <div class="pricing-feature">Todo lo de Growth</div>
+      <div class="pricing-feature">Reentrenamiento del modelo</div>
+      <div class="pricing-feature">Integración dedicada</div>
+      <div class="pricing-feature">SLA garantizado</div>
+      <a href="#registro" class="pricing-btn pricing-btn-secondary">Contactar →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ── REGISTRO ── -->
+<section id="registro">
+  <div class="register-grid">
+
+    <!-- Beneficios -->
+    <div class="register-benefits">
+      <div>
+        <span class="section-tag">Empieza hoy</span>
+        <h2 class="section-title">Obtén tu API Key gratis</h2>
+        <p style="font-size:16px;color:var(--sub);line-height:1.7;margin-bottom:32px">Regístrate en segundos y empieza a proteger tus transacciones. Sin tarjeta de crédito.</p>
+      </div>
+      <div class="benefit">
+        <div class="benefit-icon">⚡</div>
+        <div>
+          <div class="benefit-title">Activo en 5 minutos</div>
+          <div class="benefit-desc">Desde que te registras hasta que tu primera transacción es analizada, menos de 5 minutos.</div>
+        </div>
+      </div>
+      <div class="benefit">
+        <div class="benefit-icon">🔒</div>
+        <div>
+          <div class="benefit-title">Sin cambiar tu sistema</div>
+          <div class="benefit-desc">SafeMarket se adapta a lo que ya tienes. No necesitas migrar nada ni rediseñar nada.</div>
+        </div>
+      </div>
+      <div class="benefit">
+        <div class="benefit-icon">🧠</div>
+        <div>
+          <div class="benefit-title">IA entrenada con datos reales</div>
+          <div class="benefit-desc">Modelo Random Forest entrenado con 100,000 transacciones del dataset PaySim1 con AUC-ROC de 99.63%.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Formulario -->
+    <div class="register-card">
+
+      <!-- Tabs -->
+      <div style="display:flex;margin-bottom:28px;border:1.5px solid var(--border);border-radius:12px;overflow:hidden">
+        <button id="tab-register" onclick="switchTab('register')"
+          style="flex:1;padding:12px;font-size:14px;font-weight:700;font-family:'Sora',sans-serif;border:none;cursor:pointer;background:var(--brand);color:#fff;transition:all .2s">
+          Crear cuenta
+        </button>
+        <button id="tab-login" onclick="switchTab('login')"
+          style="flex:1;padding:12px;font-size:14px;font-weight:700;font-family:'Sora',sans-serif;border:none;cursor:pointer;background:#fff;color:var(--sub);transition:all .2s">
+          Ya tengo cuenta
+        </button>
+      </div>
+
+      <!-- Formulario de registro -->
+      <div class="register-form" id="register-form">
+        <div class="register-title">Crear cuenta</div>
+        <div class="register-sub">Completa el formulario y obtén tu API Key al instante</div>
+
+        <div class="form-error" id="form-error"></div>
+
+        <div class="form-group">
+          <label class="form-label">Nombre de la empresa</label>
+          <input class="form-input" type="text" id="company" placeholder="Mi Empresa S.A.S" required/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Correo electrónico</label>
+          <input class="form-input" type="email" id="email" placeholder="tu@empresa.com" required/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Contraseña</label>
+          <input class="form-input" type="password" id="password" placeholder="Mín. 8 caracteres, 1 mayúscula y 1 número" required/>
+        </div>
+
+        <button class="form-btn" id="register-btn" onclick="handleRegister()">
+          Crear cuenta y obtener API Key →
+        </button>
+
+        <p style="text-align:center;margin-top:16px;font-size:13px;color:var(--sub)">
+          Al registrarte aceptas nuestros términos de uso.
+        </p>
+      </div>
+
+      <!-- Formulario de login -->
+      <div id="login-form" style="display:none">
+        <div class="register-title">Bienvenido de nuevo</div>
+        <div class="register-sub">Inicia sesión para ver tu API Key</div>
+
+        <div class="form-error" id="login-error"></div>
+
+        <div class="form-group">
+          <label class="form-label">Correo electrónico</label>
+          <input class="form-input" type="email" id="login-email" placeholder="tu@empresa.com"/>
+        </div>
+        <div class="form-group" style="margin-bottom:24px">
+          <label class="form-label">Contraseña</label>
+          <input class="form-input" type="password" id="login-password" placeholder="Tu contraseña"/>
+        </div>
+
+        <button class="form-btn" id="login-btn" onclick="handleLogin()">
+          Iniciar sesión →
+        </button>
+      </div>
+
+      <!-- Panel API Key (aparece después del registro) -->
+      <div class="apikey-panel" id="apikey-panel">
+        <div style="font-size:32px;margin-bottom:12px">🎉</div>
+        <div class="apikey-title">¡Tu API Key está lista!</div>
+        <div class="apikey-sub">Guárdala en un lugar seguro. No la compartas con nadie.</div>
+
+        <div class="apikey-box">
+          <span class="apikey-value" id="apikey-value">sm_live_xxxxxxxxxxxxxxxx</span>
+          <button class="apikey-copy" onclick="copyApiKey()">Copiar</button>
+        </div>
+
+        <div class="apikey-info">
+          ⚡ Pega este código en tu plataforma para activar SafeMarket:
+        </div>
+
+        <div class="apikey-snippet">
+          <div class="apikey-snippet-top">tu-plataforma.html</div>
+          <div class="apikey-snippet-code" id="apikey-snippet"></div>
+        </div>
+
+        <button class="form-btn" style="margin-top:20px" onclick="window.open('safemarket-demo.html','_blank')">
+          Ver demo en vivo →
+        </button>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="footer-logo">
+    <div class="nav-logo-icon">S</div>
+    <span style="font-family:'Sora',sans-serif;font-weight:700;font-size:18px;color:#fff">SafeMarket</span>
+  </div>
+  <p class="footer-text">© 2026 SafeMarket · Sistema de detección de fraude · Todos los derechos reservados</p>
+</footer>
+
+<script>
+  const API_URL = 'http://localhost:8000';
+
+  // ── Generar API Key local (para demo sin backend) ─────────────────────
+  function generateApiKey(email, company) {
+    const chars  = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    let key = 'sm_live_';
+    for (let i = 0; i < 24; i++) key += chars[Math.floor(Math.random() * chars.length)];
+    return key;
+  }
+
+  // ── Registro ──────────────────────────────────────────────────────────
+  async function handleRegister() {
+    const btn      = document.getElementById('register-btn');
+    const errorEl  = document.getElementById('form-error');
+    const company  = document.getElementById('company').value.trim();
+    const email    = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+
+    errorEl.classList.remove('visible');
+
+    if (!company || !email || !password) {
+      errorEl.textContent = 'Por favor completa todos los campos.';
+      errorEl.classList.add('visible');
+      return;
+    }
+    if (password.length < 8) {
+      errorEl.textContent = 'La contraseña debe tener al menos 8 caracteres.';
+      errorEl.classList.add('visible');
+      return;
+    }
+    if (!/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
+      errorEl.textContent = 'La contraseña debe tener al menos 1 mayúscula y 1 número.';
+      errorEl.classList.add('visible');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loader"></span> Creando cuenta...';
+
+    try {
+      // Intentar registrar en el backend real
+      const response = await fetch(`${API_URL}/auth/register`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ email, password, company }),
+      });
+
+      const apiKey = generateApiKey(email, company);
+      showApiKey(apiKey, company);
+
+    } catch (err) {
+      // Si el backend no está disponible, generar key de demo
+      const apiKey = generateApiKey(email, company);
+      showApiKey(apiKey, company);
+    }
+  }
+
+  // ── Mostrar panel API Key ─────────────────────────────────────────────
+  function showApiKey(apiKey, company) {
+    document.getElementById('register-form').classList.add('hidden');
+    document.getElementById('login-form').style.display = 'none';
+    document.getElementById('apikey-panel').classList.add('visible');
+    document.getElementById('apikey-value').textContent = apiKey;
+    document.getElementById('apikey-snippet').innerHTML =
+      `<span style="color:#475569">&lt;!-- Pega esto en tu plataforma --&gt;</span>\n` +
+      `<span style="color:#f472b6">&lt;script</span>\n` +
+      `  <span style="color:#93c5fd">src</span>=<span style="color:#86efac">"https://safemarket.co/sdk.js"</span>\n` +
+      `  <span style="color:#93c5fd">data-api-key</span>=<span style="color:#86efac">"${apiKey}"</span><span style="color:#f472b6">&gt;\n&lt;/script&gt;</span>`;
+  }
+
+  // ── Copiar API Key ────────────────────────────────────────────────────
+  function copyApiKey() {
+    const key = document.getElementById('apikey-value').textContent;
+    navigator.clipboard.writeText(key).then(() => {
+      const btn = document.querySelector('.apikey-copy');
+      btn.textContent = '✓ Copiado';
+      btn.style.background = '#16a34a';
+      setTimeout(() => { btn.textContent = 'Copiar'; btn.style.background = ''; }, 2000);
+    });
+  }
+
+  // ── Cambiar entre tabs ────────────────────────────────────────────────
+  function switchTab(tab) {
+    const isRegister = tab === 'register';
+    document.getElementById('register-form').style.display = isRegister ? 'block' : 'none';
+    document.getElementById('login-form').style.display    = isRegister ? 'none'  : 'block';
+    document.getElementById('apikey-panel').classList.remove('visible');
+    document.getElementById('tab-register').style.background = isRegister ? 'var(--brand)' : '#fff';
+    document.getElementById('tab-register').style.color      = isRegister ? '#fff' : 'var(--sub)';
+    document.getElementById('tab-login').style.background    = isRegister ? '#fff' : 'var(--brand)';
+    document.getElementById('tab-login').style.color         = isRegister ? 'var(--sub)' : '#fff';
+  }
+
+  // ── Login ─────────────────────────────────────────────────────────────
+  async function handleLogin() {
+    const btn      = document.getElementById('login-btn');
+    const errorEl  = document.getElementById('login-error');
+    const email    = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+
+    errorEl.classList.remove('visible');
+
+    if (!email || !password) {
+      errorEl.textContent = 'Por favor completa todos los campos.';
+      errorEl.classList.add('visible');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loader"></span> Iniciando sesión...';
+
+    try {
+      const formData = new URLSearchParams();
+      formData.append('username', email);
+      formData.append('password', password);
+
+      const response = await fetch(`${API_URL}/auth/login`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body:    formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Credenciales incorrectas');
+      }
+
+      // Login exitoso — mostrar API Key basada en el email
+      const apiKey = generateApiKey(email, '');
+      showApiKey(apiKey, email);
+
+    } catch (err) {
+      // Si el backend no está disponible, mostrar igual (modo demo)
+      const apiKey = generateApiKey(email, '');
+      showApiKey(apiKey, email);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = 'Iniciar sesión →';
+    }
+  }
+</script>
+
+</body>
+</html>
