@@ -9,7 +9,7 @@ import logging
 
 from db import Base, engine, test_connection
 from db.models_enhanced import *  # noqa: F401, F403
-from routers import auth, users, transactions, ml, sdk
+from routers import auth, users, transactions, ml, sdk, admin
 from core.config import (
     ALLOWED_ORIGINS,
     API_TITLE,
@@ -70,6 +70,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    allow_origin_regex=".*",  # ← acepta file:// y cualquier origen en desarrollo
 )
 
 # === ROUTERS ===
@@ -78,6 +79,7 @@ app.include_router(users.router)
 app.include_router(transactions.router)
 app.include_router(ml.router)
 app.include_router(sdk.router)
+app.include_router(admin.router)
 
 @app.get("/", tags=["Health"])
 def root():
@@ -104,3 +106,4 @@ async def general_exception_handler(request, exc):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=ENVIRONMENT == "development")
+

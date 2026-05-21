@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SafeMarket — Panel Administrativo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --brand:#1a3c6e;--brand2:#2563eb;--green:#0d9488;
+      --danger:#ef4444;--warn:#f59e0b;--purple:#7c3aed;
+      --border:#e2e8f0;--gray:#f4f7fb;--text:#0f172a;--sub:#64748b;
+      --sidebar:#0f1f3d;
+    }
+    html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--gray);color:var(--text)}
+    .layout{display:flex;min-height:100vh}
+
+    /* SIDEBAR */
+    .sidebar{width:220px;background:var(--sidebar);display:flex;flex-direction:column;position:fixed;height:100vh;top:0;left:0;z-index:100}
+    .sb-logo{padding:22px 18px 18px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px}
+    .sb-logo-icon{width:34px;height:34px;background:linear-gradient(135deg,var(--brand2),var(--green));border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-weight:800;color:#fff;font-size:15px}
+    .sb-logo-text{font-family:'Sora',sans-serif;font-weight:700;font-size:16px;color:#fff}
+    .sb-badge{font-size:9px;font-weight:700;padding:2px 6px;border-radius:5px;background:linear-gradient(135deg,var(--brand2),var(--purple));color:#fff;margin-left:4px}
+    .sb-section{padding:18px 12px 6px;font-size:10px;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:1.5px;text-transform:uppercase}
+    .nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;margin:2px 8px;cursor:pointer;font-size:13px;font-weight:500;color:rgba(255,255,255,.55);transition:all .18s;border:none;background:none;width:calc(100% - 16px);text-align:left}
+    .nav-item:hover{background:rgba(255,255,255,.07);color:#fff}
+    .nav-item.active{background:rgba(37,99,235,.25);color:#fff}
+    .nav-item .ni{font-size:15px;width:18px;text-align:center}
+    .nav-item .nb{margin-left:auto;background:var(--danger);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:8px}
+    .sb-foot{margin-top:auto;padding:14px;border-top:1px solid rgba(255,255,255,.08)}
+    .sb-user{display:flex;align-items:center;gap:10px}
+    .sb-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--brand2),var(--green));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#fff;flex-shrink:0}
+    .sb-email{font-size:11px;color:rgba(255,255,255,.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
+    .sb-role{font-size:10px;color:rgba(255,255,255,.35)}
+    .sb-logout{background:none;border:none;cursor:pointer;color:rgba(255,255,255,.4);font-size:15px;padding:4px;transition:color .2s}
+    .sb-logout:hover{color:var(--danger)}
+
+    /* MAIN */
+    .main{margin-left:220px;flex:1;display:flex;flex-direction:column}
+
+    /* TOPBAR */
+    .topbar{background:#fff;border-bottom:1px solid var(--border);padding:0 26px;height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+    .topbar-title{font-family:'Sora',sans-serif;font-weight:700;font-size:15px;color:var(--brand)}
+    .topbar-right{display:flex;align-items:center;gap:10px}
+    .alert-pill{background:var(--danger);color:#fff;font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;display:none;align-items:center;gap:6px}
+    .alert-pill::before{content:'';width:7px;height:7px;background:#fff;border-radius:50%;animation:pulse 1.5s infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+    .refresh-btn{background:var(--gray);border:1px solid var(--border);color:var(--sub);padding:7px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif}
+    .refresh-btn:hover{background:var(--brand);color:#fff;border-color:var(--brand)}
+
+    /* CONTENT */
+    .content{padding:24px;flex:1}
+    .page{display:none}.page.active{display:block}
+
+    /* KPI */
+    .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+    .kpi{background:#fff;border-radius:14px;padding:18px;border:1px solid var(--border);border-top:3px solid var(--brand2)}
+    .kpi.g{border-top-color:var(--green)}.kpi.r{border-top-color:var(--danger)}.kpi.w{border-top-color:var(--warn)}.kpi.p{border-top-color:var(--purple)}
+    .kpi-ico{font-size:20px;margin-bottom:8px}
+    .kpi-val{font-family:'Sora',sans-serif;font-size:26px;font-weight:800;color:var(--brand);line-height:1;margin-bottom:3px}
+    .kpi-lbl{font-size:12px;color:var(--sub)}
+    .kpi-sub{font-size:11px;color:var(--sub);margin-top:5px;opacity:.7}
+
+    /* CARDS */
+    .card{background:#fff;border-radius:16px;border:1px solid var(--border);box-shadow:0 1px 4px rgba(0,0,0,.04)}
+    .cp{padding:22px}
+    .ct{font-family:'Sora',sans-serif;font-size:14px;font-weight:700;color:var(--brand);margin-bottom:3px}
+    .cs{font-size:12px;color:var(--sub);margin-bottom:16px}
+
+    /* GRID */
+    .g2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
+    .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin-bottom:18px}
+
+    /* TABLA */
+    .tw{overflow-x:auto}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    thead th{padding:9px 14px;background:var(--gray);color:var(--sub);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
+    tbody tr{border-bottom:1px solid #f1f5f9;transition:background .15s}
+    tbody tr:hover{background:#f8fafc}
+    tbody td{padding:11px 14px;vertical-align:middle}
+    .mono{font-family:'DM Mono',monospace;font-size:11px;color:var(--brand)}
+
+    /* BADGES */
+    .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:700}
+    .badge::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor}
+    .bg{background:#dcfce7;color:#16a34a}.br{background:#fee2e2;color:#dc2626}
+    .by{background:#fef9c3;color:#ca8a04}.bb{background:#eff6ff;color:#2563eb}.bgr{background:#f1f5f9;color:#64748b}
+
+    /* FILTROS */
+    .filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+    .fi,.fs{padding:8px 12px;border:1.5px solid var(--border);border-radius:9px;font-size:13px;outline:none;font-family:'DM Sans',sans-serif;background:#fff;color:var(--text);transition:border-color .2s}
+    .fi:focus,.fs:focus{border-color:var(--brand2)}.fi{width:200px}
+    .fb{padding:8px 16px;background:var(--brand);color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s}
+    .fb:hover{background:var(--brand2)}
+    .fc{padding:8px 12px;background:var(--gray);color:var(--sub);border:1px solid var(--border);border-radius:9px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif}
+
+    /* PAGINACIÓN */
+    .pag{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-top:1px solid var(--border)}
+    .pag-info{font-size:13px;color:var(--sub)}
+    .pag-btns{display:flex;gap:6px}
+    .pb{padding:6px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;cursor:pointer;background:#fff;font-family:'DM Sans',sans-serif;transition:all .2s}
+    .pb:hover{background:var(--brand);color:#fff;border-color:var(--brand)}.pb:disabled{opacity:.4;cursor:not-allowed}
+
+    /* EMPRESA CARDS */
+    .eg{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+    .ec{background:#fff;border-radius:14px;padding:18px;border:1px solid var(--border);transition:all .2s;cursor:default}
+    .ec:hover{border-color:var(--brand2);box-shadow:0 4px 20px rgba(37,99,235,.1);transform:translateY(-2px)}
+    .en{font-family:'Sora',sans-serif;font-weight:700;font-size:14px;color:var(--brand);margin-bottom:3px}
+    .ei{font-size:12px;color:var(--sub);margin-bottom:12px}
+    .es{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .esv{font-family:'Sora',sans-serif;font-weight:700;font-size:15px;color:var(--brand)}
+    .esl{font-size:11px;color:var(--sub);margin-top:1px}
+    .ebar{height:4px;background:#f1f5f9;border-radius:3px;margin-top:12px;overflow:hidden}
+    .efill{height:100%;border-radius:3px;background:var(--danger)}
+
+    /* ALERTAS */
+    .ai{padding:14px 18px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:12px;transition:background .15s}
+    .ai:hover{background:#f8fafc}
+    .aico{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+    .aico.critical,.aico.high{background:#fee2e2}.aico.medium{background:#fef9c3}.aico.low{background:#dcfce7}
+    .ainf{flex:1;min-width:0}
+    .ait{font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px}
+    .aid{font-size:12px;color:var(--sub)}
+    .aitm{font-size:11px;color:var(--sub);opacity:.7;margin-top:2px}
+
+    /* LOADING/EMPTY */
+    .loading{text-align:center;padding:40px;color:var(--sub)}
+    .sp{width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--brand2);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 10px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .empty{text-align:center;padding:40px;color:var(--sub);font-size:13px}
+    .ei2{font-size:32px;margin-bottom:8px}
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sb-logo">
+      <div class="sb-logo-icon">S</div>
+      <div>
+        <span class="sb-logo-text">SafeMarket</span>
+        <span class="sb-badge">ADMIN</span>
+      </div>
+    </div>
+    <div class="sb-section">Principal</div>
+    <button class="nav-item active" id="nav-overview"      onclick="goTo('overview')"><span class="ni">📊</span> Resumen global</button>
+    <button class="nav-item"        id="nav-transactions"  onclick="goTo('transactions')"><span class="ni">💳</span> Transacciones</button>
+    <button class="nav-item"        id="nav-alertas"       onclick="goTo('alertas')"><span class="ni">🚨</span> Alertas<span class="nb" id="nb">0</span></button>
+    <div class="sb-section">Clientes</div>
+    <button class="nav-item"        id="nav-empresas"      onclick="goTo('empresas')"><span class="ni">🏢</span> Empresas</button>
+    <div class="sb-foot">
+      <div class="sb-user">
+        <div class="sb-avatar" id="sb-av">A</div>
+        <div style="flex:1;min-width:0">
+          <div class="sb-email" id="sb-email">admin@safemarket.co</div>
+          <div class="sb-role"  id="sb-role">ADMIN</div>
+        </div>
+        <button class="sb-logout" onclick="logout()" title="Cerrar sesión">⏻</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="topbar-title">Resumen Global</div>
+      <div class="topbar-right">
+        <div class="alert-pill" id="alert-pill"><span id="ap-count">0</span> alertas abiertas</div>
+        <button class="refresh-btn" onclick="refreshCurrent()">↻ Actualizar</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- OVERVIEW -->
+      <div class="page active" id="page-overview">
+        <div class="kpi-row" id="kpi-row">
+          <div class="loading"><div class="sp"></div>Cargando...</div>
+        </div>
+        <div class="g2">
+          <!-- Gráfica área: volumen por día -->
+          <div class="card cp">
+            <div class="ct">Volumen procesado</div>
+            <div class="cs">Monto total vs monto fraudulento por día</div>
+            <canvas id="chart-volume" height="200"></canvas>
+          </div>
+          <!-- Gráfica barras: por estado -->
+          <div class="card cp">
+            <div class="ct">Transacciones por estado</div>
+            <div class="cs">Distribución de decisiones del motor antifraude</div>
+            <canvas id="chart-status" height="200"></canvas>
+          </div>
+        </div>
+        <div class="g2">
+          <!-- Donut: por tipo -->
+          <div class="card cp">
+            <div class="ct">Distribución por tipo</div>
+            <div class="cs">Cantidad de operaciones por categoría</div>
+            <div style="display:flex;align-items:center;gap:24px">
+              <div style="width:180px;flex-shrink:0"><canvas id="chart-type" height="180"></canvas></div>
+              <div id="type-legend" style="flex:1;font-size:12px;color:var(--sub)"></div>
+            </div>
+          </div>
+          <!-- Ranking empresas -->
+          <div class="card cp">
+            <div class="ct">Empresas por volumen</div>
+            <div class="cs">Top clientes según monto procesado</div>
+            <div id="ranking"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TRANSACCIONES -->
+      <div class="page" id="page-transactions">
+        <div class="card">
+          <div class="cp" style="border-bottom:1px solid var(--border)">
+            <div class="ct">Todas las transacciones</div>
+            <div class="cs">Historial completo de todos los clientes de SafeMarket</div>
+            <div class="filters">
+              <input class="fi" id="f-emp" placeholder="🔍 Buscar empresa..."/>
+              <select class="fs" id="f-st"><option value="">Todos los estados</option><option>APPROVED</option><option>DECLINED</option><option>REVIEW</option><option>PENDING</option></select>
+              <select class="fs" id="f-rk"><option value="">Todos los riesgos</option><option>LOW</option><option>MEDIUM</option><option>HIGH</option></select>
+              <select class="fs" id="f-fr"><option value="">Fraude: todos</option><option value="true">Solo fraudes</option><option value="false">Sin fraude</option></select>
+              <button class="fb" onclick="loadTx(0)">Filtrar</button>
+              <button class="fc" onclick="clearF()">Limpiar</button>
+            </div>
+          </div>
+          <div class="tw">
+            <table>
+              <thead><tr><th>ID</th><th>Empresa</th><th>Usuario</th><th>Monto</th><th>Tipo</th><th>Estado</th><th>Riesgo</th><th>Score</th><th>Fraude</th><th>Fecha</th></tr></thead>
+              <tbody id="tx-body"><tr><td colspan="10"><div class="loading"><div class="sp"></div></div></td></tr></tbody>
+            </table>
+          </div>
+          <div class="pag">
+            <div class="pag-info" id="pag-info">—</div>
+            <div class="pag-btns">
+              <button class="pb" id="btn-prev" onclick="changePg(-1)" disabled>← Anterior</button>
+              <button class="pb" id="btn-next" onclick="changePg(1)">Siguiente →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ALERTAS -->
+      <div class="page" id="page-alertas">
+        <div class="card">
+          <div class="cp" style="border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div class="ct">Alertas de fraude</div>
+              <div class="cs">Todas las alertas de todos los clientes, ordenadas por criticidad</div>
+            </div>
+            <select class="fs" id="f-ast" onchange="loadAlertas()">
+              <option value="OPEN">Abiertas</option>
+              <option value="IN_REVIEW">En revisión</option>
+              <option value="RESOLVED">Resueltas</option>
+              <option value="DISMISSED">Descartadas</option>
+            </select>
+          </div>
+          <div id="alertas-list"><div class="loading"><div class="sp"></div>Cargando alertas...</div></div>
+        </div>
+      </div>
+
+      <!-- EMPRESAS -->
+      <div class="page" id="page-empresas">
+        <div class="ct" style="font-family:'Sora',sans-serif;font-size:17px;font-weight:800;color:var(--brand);margin-bottom:16px">Empresas clientes</div>
+        <div class="eg" id="eg"><div class="loading"><div class="sp"></div>Cargando...</div></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  const API = 'http://localhost:8000';
+  const params = new URLSearchParams(window.location.search);
+  let TOKEN = params.get('token') || '';
+  const EMAIL = params.get('email') || 'admin@safemarket.co';
+  const ROLE  = params.get('role')  || 'ADMIN';
+  const PAGE_SIZE = 50;
+  let curPage = 0, curSection = 'overview';
+  let charts = {};
+
+  // ── Init ────────────────────────────────────────────────────────────────
+  window.addEventListener('load', () => {
+    if (!TOKEN) { alert('Sesión no válida. Por favor inicia sesión nuevamente.'); window.close(); return; }
+    document.getElementById('sb-email').textContent = EMAIL;
+    document.getElementById('sb-role').textContent  = ROLE;
+    document.getElementById('sb-av').textContent    = EMAIL.slice(0,2).toUpperCase();
+    loadOverview();
+  });
+
+  function logout() {
+    TOKEN = '';
+    window.close();
+  }
+
+  // ── Navegación ───────────────────────────────────────────────────────────
+  const titles = { overview:'Resumen Global', transactions:'Transacciones', alertas:'Alertas de Fraude', empresas:'Empresas Clientes' };
+  function goTo(s) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById(`page-${s}`).classList.add('active');
+    document.getElementById(`nav-${s}`).classList.add('active');
+    document.getElementById('topbar-title').textContent = titles[s];
+    curSection = s;
+    if (s==='overview')     loadOverview();
+    if (s==='transactions') loadTx(0);
+    if (s==='alertas')      loadAlertas();
+    if (s==='empresas')     loadEmpresas();
+  }
+  function refreshCurrent() { goTo(curSection); }
+
+  // ── API helper ───────────────────────────────────────────────────────────
+  async function api(path) {
+    const r = await fetch(`${API}${path}`, { headers: { Authorization:`Bearer ${TOKEN}` } });
+    if (!r.ok) throw new Error(`Error ${r.status}`);
+    return r.json();
+  }
+
+  // ── OVERVIEW ─────────────────────────────────────────────────────────────
+  async function loadOverview() {
+    try {
+      const [stats, txAll, empresas] = await Promise.all([
+        api('/admin/stats'),
+        api('/admin/transactions?limit=200'),
+        api('/admin/empresas'),
+      ]);
+      renderKPIs(stats);
+      renderCharts(txAll.transacciones || [], stats);
+      renderRanking(empresas.slice(0,5));
+      updateAlertBadge(stats.alertas_abiertas);
+    } catch(e) {
+      document.getElementById('kpi-row').innerHTML = `<div class="empty"><div class="ei2">⚠️</div>${e.message}</div>`;
+    }
+  }
+
+  function renderKPIs(s) {
+    const kpis = [
+      { ico:'💰', val:`$${(s.monto_total/1000000).toFixed(2)}M`, lbl:'Volumen total', sub:`${s.total_transacciones} transacciones`, cls:'' },
+      { ico:'🚫', val:s.bloqueadas,      lbl:'Bloqueadas',        sub:'DECLINED', cls:'r' },
+      { ico:'⚠️', val:s.alertas_abiertas,lbl:'Alertas abiertas',  sub:'Requieren atención', cls:'w' },
+      { ico:'🏢', val:s.empresas_activas,lbl:'Empresas activas',  sub:`${s.usuarios_activos} usuarios`, cls:'g' },
+      { ico:'🔍', val:s.fraudes_detectados,lbl:'Fraudes detectados',sub:`Tasa: ${s.tasa_fraude_pct}%`, cls:'r' },
+      { ico:'🔄', val:s.en_revision,     lbl:'En revisión',       sub:'Pendientes', cls:'w' },
+      { ico:'🛡️', val:`$${(s.monto_protegido/1000).toFixed(0)}K`, lbl:'Monto protegido', sub:'95% del volumen', cls:'g' },
+      { ico:'👥', val:s.usuarios_activos,lbl:'Usuarios activos',  sub:'En todas las empresas', cls:'p' },
+    ];
+    document.getElementById('kpi-row').style.gridTemplateColumns = 'repeat(4,1fr)';
+    document.getElementById('kpi-row').innerHTML = kpis.map(k=>`
+      <div class="kpi ${k.cls}">
+        <div class="kpi-ico">${k.ico}</div>
+        <div class="kpi-val">${k.val}</div>
+        <div class="kpi-lbl">${k.lbl}</div>
+        <div class="kpi-sub">${k.sub}</div>
+      </div>`).join('');
+  }
+
+  function renderCharts(txs, stats) {
+    // ── Gráfica de área: volumen por fecha ──
+    const byDate = {};
+    txs.forEach(tx => {
+      const d = tx.fecha ? tx.fecha.slice(0,10) : 'Sin fecha';
+      if (!byDate[d]) byDate[d] = { total:0, fraude:0 };
+      byDate[d].total += tx.monto;
+      if (tx.es_fraude) byDate[d].fraude += tx.monto;
+    });
+    const dates  = Object.keys(byDate).sort().slice(-14);
+    const labels = dates.map(d => d.slice(5));
+
+    if (charts.vol) charts.vol.destroy();
+    charts.vol = new Chart(document.getElementById('chart-volume'), {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          { label:'Volumen total', data: dates.map(d=>byDate[d]?.total||0), borderColor:'#2563eb', backgroundColor:'rgba(37,99,235,.08)', fill:true, tension:.4, pointRadius:3, borderWidth:2.5 },
+          { label:'Fraude',        data: dates.map(d=>byDate[d]?.fraude||0),borderColor:'#ef4444', backgroundColor:'rgba(239,68,68,.06)',  fill:true, tension:.4, pointRadius:3, borderWidth:2 },
+        ]
+      },
+      options:{ responsive:true, plugins:{ legend:{ labels:{ font:{size:12}, boxWidth:10 } } }, scales:{ x:{ grid:{display:false}, ticks:{font:{size:11}} }, y:{ grid:{color:'#f1f5f9'}, ticks:{font:{size:11}, callback:v=>`$${(v/1000).toFixed(0)}K`} } } }
+    });
+
+    // ── Gráfica de barras: por estado ──
+    const estados = ['APPROVED','DECLINED','REVIEW','PENDING'];
+    const estCounts = estados.map(e => txs.filter(t=>t.estado===e).length);
+    const estColors = ['#0d9488','#ef4444','#f59e0b','#2563eb'];
+
+    if (charts.status) charts.status.destroy();
+    charts.status = new Chart(document.getElementById('chart-status'), {
+      type:'bar',
+      data:{ labels:estados, datasets:[{ data:estCounts, backgroundColor:estColors, borderRadius:8, borderSkipped:false }] },
+      options:{ responsive:true, plugins:{ legend:{display:false} }, scales:{ x:{grid:{display:false},ticks:{font:{size:11}}}, y:{grid:{color:'#f1f5f9'},ticks:{font:{size:11}}} } }
+    });
+
+    // ── Donut: por tipo ──
+    const tipos = {};
+    txs.forEach(tx => { tipos[tx.tipo] = (tipos[tx.tipo]||0)+1; });
+    const tipoLabels = Object.keys(tipos);
+    const tipoData   = Object.values(tipos);
+    const tipoColors = ['#2563eb','#0d9488','#f59e0b','#ef4444','#7c3aed','#64748b'];
+
+    if (charts.type) charts.type.destroy();
+    charts.type = new Chart(document.getElementById('chart-type'), {
+      type:'doughnut',
+      data:{ labels:tipoLabels, datasets:[{ data:tipoData, backgroundColor:tipoColors.slice(0,tipoLabels.length), borderWidth:2, borderColor:'#fff' }] },
+      options:{ responsive:true, cutout:'65%', plugins:{ legend:{display:false} } }
+    });
+
+    const total = tipoData.reduce((a,b)=>a+b,0);
+    document.getElementById('type-legend').innerHTML = tipoLabels.map((l,i)=>`
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <div style="width:10px;height:10px;border-radius:2px;background:${tipoColors[i]};flex-shrink:0"></div>
+        <span style="color:#374151;font-weight:600">${l}</span>
+        <span style="margin-left:auto;color:var(--sub)">${tipoData[i]} · ${total?((tipoData[i]/total)*100).toFixed(0):0}%</span>
+      </div>`).join('');
+  }
+
+  function renderRanking(empresas) {
+    const max = empresas[0]?.monto_total||1;
+    document.getElementById('ranking').innerHTML = empresas.length ? empresas.map((e,i)=>`
+      <div style="margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:13px">
+          <span style="font-weight:600;color:var(--brand)">${i+1}. ${e.empresa}</span>
+          <span style="font-weight:700">$${(e.monto_total/1000).toFixed(1)}K</span>
+        </div>
+        <div style="height:7px;background:#f1f5f9;border-radius:4px;overflow:hidden">
+          <div style="height:100%;width:${(e.monto_total/max*100).toFixed(1)}%;background:linear-gradient(90deg,var(--brand2),var(--green));border-radius:4px"></div>
+        </div>
+        <div style="font-size:11px;color:var(--sub);margin-top:3px">${e.total_tx} transacciones · ${e.fraudes} fraudes</div>
+      </div>`).join('') : '<div class="empty">Sin datos</div>';
+  }
+
+  function updateAlertBadge(n) {
+    document.getElementById('nb').textContent = n;
+    document.getElementById('ap-count').textContent = n;
+    const p = document.getElementById('alert-pill');
+    p.style.display = n>0 ? 'flex':'none';
+  }
+
+  // ── TRANSACCIONES ────────────────────────────────────────────────────────
+  async function loadTx(skip) {
+    curPage = skip;
+    const emp = document.getElementById('f-emp').value;
+    const st  = document.getElementById('f-st').value;
+    const rk  = document.getElementById('f-rk').value;
+    const fr  = document.getElementById('f-fr').value;
+    let url   = `/admin/transactions?skip=${skip}&limit=${PAGE_SIZE}`;
+    if (emp) url+=`&empresa=${encodeURIComponent(emp)}`;
+    if (st)  url+=`&status=${st}`;
+    if (rk)  url+=`&risk_level=${rk}`;
+    if (fr)  url+=`&is_fraud=${fr}`;
+
+    document.getElementById('tx-body').innerHTML=`<tr><td colspan="10"><div class="loading"><div class="sp"></div></div></td></tr>`;
+    try {
+      const d = await api(url);
+      const txs = d.transacciones||[], total = d.total||0;
+      document.getElementById('pag-info').textContent=`Mostrando ${skip+1}–${Math.min(skip+PAGE_SIZE,total)} de ${total}`;
+      document.getElementById('btn-prev').disabled = skip===0;
+      document.getElementById('btn-next').disabled = skip+PAGE_SIZE>=total;
+      if (!txs.length) { document.getElementById('tx-body').innerHTML=`<tr><td colspan="10"><div class="empty"><div class="ei2">📭</div>Sin resultados</div></td></tr>`; return; }
+      document.getElementById('tx-body').innerHTML = txs.map(tx=>`
+        <tr>
+          <td><span class="mono">${tx.transaction_id.slice(0,8).toUpperCase()}...</span></td>
+          <td><strong style="color:var(--brand)">${tx.empresa}</strong><div style="font-size:11px;color:var(--sub)">${tx.empresa_industria||''}</div></td>
+          <td style="font-size:12px;color:var(--sub)">${tx.usuario_email}</td>
+          <td><strong>$${Number(tx.monto).toLocaleString('es',{minimumFractionDigits:0,maximumFractionDigits:0})}</strong> <span style="font-size:10px;color:var(--sub)">${tx.moneda}</span></td>
+          <td><span class="badge bgr">${tx.tipo}</span></td>
+          <td>${sb(tx.estado)}</td>
+          <td>${rb(tx.nivel_riesgo)}</td>
+          <td><strong>${tx.score_riesgo!==null?(tx.score_riesgo*100).toFixed(0)+'%':'—'}</strong></td>
+          <td>${tx.es_fraude?'<span class="badge br">Fraude</span>':'<span class="badge bg">Legítima</span>'}</td>
+          <td style="font-size:11px;color:var(--sub)">${tx.fecha?new Date(tx.fecha).toLocaleDateString('es-CO',{day:'2-digit',month:'short',year:'numeric'}):'—'}</td>
+        </tr>`).join('');
+    } catch(e) {
+      document.getElementById('tx-body').innerHTML=`<tr><td colspan="10"><div class="empty"><div class="ei2">⚠️</div>${e.message}</div></td></tr>`;
+    }
+  }
+  function changePg(d) { loadTx(curPage+(d*PAGE_SIZE)); }
+  function clearF() { ['f-emp','f-st','f-rk','f-fr'].forEach(id=>document.getElementById(id).value=''); loadTx(0); }
+
+  // ── ALERTAS ──────────────────────────────────────────────────────────────
+  async function loadAlertas() {
+    const st = document.getElementById('f-ast').value;
+    document.getElementById('alertas-list').innerHTML=`<div class="loading"><div class="sp"></div></div>`;
+    try {
+      const al = await api(`/admin/alertas?status=${st}&limit=100`);
+      if (!al.length) { document.getElementById('alertas-list').innerHTML=`<div class="empty"><div class="ei2">✅</div>No hay alertas ${st.toLowerCase()}</div>`; return; }
+      const ico = {CRITICAL:'🚨',HIGH:'🔴',MEDIUM:'⚠️',LOW:'🟡'};
+      document.getElementById('alertas-list').innerHTML = al.map(a=>`
+        <div class="ai">
+          <div class="aico ${a.nivel.toLowerCase()}">${ico[a.nivel]||'⚠️'}</div>
+          <div class="ainf">
+            <div class="ait">${a.empresa} — ${a.tipo_tx} · $${Number(a.monto).toLocaleString('es',{maximumFractionDigits:0})}</div>
+            <div class="aid">${a.usuario_email} · ${rb(a.riesgo)} · ${a.es_fraude?'<span class="badge br">Fraude confirmado</span>':'Sin confirmar'}</div>
+            <div class="aitm">${a.fecha?new Date(a.fecha).toLocaleString('es-CO'):'—'}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-family:'Sora',sans-serif;font-size:17px;font-weight:800;color:${a.nivel==='CRITICAL'||a.nivel==='HIGH'?'#dc2626':a.nivel==='MEDIUM'?'#ca8a04':'#16a34a'}">${a.score!==null?(a.score*100).toFixed(0)+'%':'—'}</div>
+            ${sb(a.estado)}
+          </div>
+        </div>`).join('');
+    } catch(e) {
+      document.getElementById('alertas-list').innerHTML=`<div class="empty"><div class="ei2">⚠️</div>${e.message}</div>`;
+    }
+  }
+
+  // ── EMPRESAS ─────────────────────────────────────────────────────────────
+  async function loadEmpresas() {
+    document.getElementById('eg').innerHTML=`<div class="loading"><div class="sp"></div></div>`;
+    try {
+      const em = await api('/admin/empresas');
+      if (!em.length) { document.getElementById('eg').innerHTML=`<div class="empty"><div class="ei2">🏢</div>Sin empresas</div>`; return; }
+      document.getElementById('eg').innerHTML = em.map(e=>`
+        <div class="ec">
+          <div class="en">${e.empresa}</div>
+          <div class="ei">${e.industria||'Sin industria'} · ${e.pais||'—'}</div>
+          <div class="es">
+            <div style="background:var(--gray);border-radius:8px;padding:10px">
+              <div class="esv">$${(e.monto_total/1000).toFixed(1)}K</div>
+              <div class="esl">Volumen total</div>
+            </div>
+            <div style="background:var(--gray);border-radius:8px;padding:10px">
+              <div class="esv">${e.total_tx}</div>
+              <div class="esl">Transacciones</div>
+            </div>
+            <div style="background:var(--gray);border-radius:8px;padding:10px">
+              <div class="esv" style="color:var(--danger)">${e.fraudes}</div>
+              <div class="esl">Fraudes</div>
+            </div>
+            <div style="background:var(--gray);border-radius:8px;padding:10px">
+              <div class="esv" style="color:var(--warn)">${e.tasa_fraude_pct}%</div>
+              <div class="esl">Tasa fraude</div>
+            </div>
+          </div>
+          <div class="ebar"><div class="efill" style="width:${Math.min(e.tasa_fraude_pct*10,100)}%"></div></div>
+        </div>`).join('');
+    } catch(e) {
+      document.getElementById('eg').innerHTML=`<div class="empty"><div class="ei2">⚠️</div>${e.message}</div>`;
+    }
+  }
+
+  // ── Helpers badges ────────────────────────────────────────────────────────
+  function sb(s) {
+    const m={APPROVED:'bg',DECLINED:'br',REVIEW:'by',PENDING:'bb'};
+    return `<span class="badge ${m[s]||'bgr'}">${s||'—'}</span>`;
+  }
+  function rb(r) {
+    const m={LOW:'bg',MEDIUM:'by',HIGH:'br'};
+    return `<span class="badge ${m[r]||'bgr'}">${r||'—'}</span>`;
+  }
+</script>
+</body>
+</html>
