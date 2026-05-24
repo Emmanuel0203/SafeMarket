@@ -28,7 +28,7 @@ class ValidationResult:
 
 
 # ── Tipos y valores válidos (alineados con tu BD) ─────────────────────────
-VALID_TYPES       = {"PURCHASE", "TRANSFER", "WITHDRAWAL", "DEPOSIT"}
+VALID_TYPES       = {"PURCHASE", "TRANSFER", "WITHDRAWAL", "DEPOSIT", "CASH_OUT", "CASH_IN", "PAYMENT", "DEBIT"}
 VALID_SOURCES     = {"CARD", "BANK", "WALLET"}
 VALID_CURRENCIES  = {"USD", "COP", "EUR", "MXN", "BRL"}
 VALID_RISK_LEVELS = {"LOW", "MEDIUM", "HIGH"}
