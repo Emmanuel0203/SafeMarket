@@ -9,7 +9,7 @@ import logging
 
 from db import Base, engine, test_connection
 from db.models_enhanced import *  # noqa: F401, F403
-from routers import auth, users, transactions, ml, sdk, admin
+from routers import auth, users, transactions, ml, sdk, admin, simulator
 from core.config import (
     ALLOWED_ORIGINS,
     API_TITLE,
@@ -40,6 +40,10 @@ app = FastAPI(
     description=API_DESCRIPTION,
     openapi_url="/api/v1/openapi.json" if ENVIRONMENT == "development" else None
 )
+
+# Servir archivos estáticos para la UI de simulador
+from fastapi.staticfiles import StaticFiles
+app.mount('/static', StaticFiles(directory='static'), name='static')
 
 # ✅ Botón Authorize con JWT en los docs
 def custom_openapi():
@@ -80,6 +84,7 @@ app.include_router(transactions.router)
 app.include_router(ml.router)
 app.include_router(sdk.router)
 app.include_router(admin.router)
+app.include_router(simulator.router)
 
 @app.get("/", tags=["Health"])
 def root():

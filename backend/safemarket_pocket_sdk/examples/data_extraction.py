@@ -1,4 +1,4 @@
-\"\"\"
+"""
 SafeMarket Pocket SDK - Ejemplo: Extracción de Datos
 ======================================================
 
@@ -9,7 +9,7 @@ Este ejemplo es útil para integradores que quieren:
 - Entrenar modelos personalizados
 - Auditar decisiones
 - Construir datasets etiquetados
-\"\"\"
+"""
 
 import csv
 from datetime import datetime, timedelta
@@ -21,39 +21,39 @@ from safemarket_pocket_sdk.core import Transaction
 
 
 def extract_dataset_from_postgresql():
-    \"\"\"
+    """
     Ejemplo: Extraer datos de PostgreSQL para entrenamiento.
-    \"\"\"
+    """
     
-    print(\"\\n📊 SafeMarket Pocket SDK - Extracción de Datos\\n\")
+    print("\\n📊 SafeMarket Pocket SDK - Extracción de Datos\\n")
     
     # 1. Conectar a BD PostgreSQL
-    print(\"[1] Conectando a PostgreSQL...\")
+    print("[1] Conectando a PostgreSQL...")
     
     connector = PostgreSQLConnector(
-        connection_string=\"postgresql://usuario:contraseña@localhost:5432/safemarket_db\",
-        transaction_table=\"transactions\",
-        buyer_table=\"users\",
-        seller_table=\"merchants\"
+        connection_string="postgresql://usuario:contraseña@localhost:5432/safemarket_db",
+        transaction_table="transactions",
+        buyer_table="users",
+        seller_table="merchants"
     )
     
     try:
         connector.connect()
-        print(\"    ✅ Conexión exitosa\\n\")
+        print("    ✅ Conexión exitosa\\n")
         
         # 2. Validar esquema
-        print(\"[2] Validando esquema...\")
+        print("[2] Validando esquema...")
         is_valid, errors = connector.validate()
         
         if not is_valid:
-            print(f\"    ❌ Errores: {errors}\")
+            print(f"    ❌ Errores: {errors}")
             return
-        print(\"    ✅ Esquema válido\\n\")
+        print("    ✅ Esquema válido\\n")
         
         # 3. Extraer transacciones de los últimos 30 días
-        print(\"[3] Extrayendo transacciones...\\n\")
+        print("[3] Extrayendo transacciones...\\n")
         
-        query = \"\"\"
+        query = """
             SELECT 
                 id, amount, buyer_id, seller_id, created_at,
                 buyer_email, seller_email, category,
@@ -62,20 +62,20 @@ def extract_dataset_from_postgresql():
             WHERE created_at > NOW() - INTERVAL '30 days'
             AND is_fraud IS NOT NULL
             ORDER BY created_at DESC
-        \"\"\"
+        """
         
         transactions = connector.fetch_transactions(query, limit=50000)
-        print(f\"    ✅ Extrajimos {len(transactions)} transacciones\\n\")
+        print(f"    ✅ Extrajimos {len(transactions)} transacciones\\n")
         
         # 4. Construir features para cada transacción
-        print(\"[4] Construyendo features...\\n\")
+        print("[4] Construyendo features...\\n")
         
         feature_extractor = FeatureExtractor()
         dataset = []
         
         for i, tx_data in enumerate(transactions):
             if i % 5000 == 0:
-                print(f\"    Procesando: {i}/{len(transactions)}...\")
+                print(f"    Procesando: {i}/{len(transactions)}...")
             
             # Obtener históricos
             buyer_hist = connector.fetch_buyer_history(tx_data['buyer_id'])
@@ -133,12 +133,12 @@ def extract_dataset_from_postgresql():
             
             dataset.append(dataset_row)
         
-        print(f\"    ✅ Features construidos\\n\")
+        print(f"    ✅ Features construidos\\n")
         
         # 5. Exportar dataset a CSV
-        print(\"[5] Exportando dataset...\\n\")
+        print("[5] Exportando dataset...\\n")
         
-        output_file = \"safemarket_training_dataset.csv\"
+        output_file = "safemarket_training_dataset.csv"
         
         if dataset:
             with open(output_file, 'w', newline='') as f:
@@ -146,12 +146,12 @@ def extract_dataset_from_postgresql():
                 writer.writeheader()
                 writer.writerows(dataset)
             
-            print(f\"    ✅ Dataset exportado a: {output_file}\")
-            print(f\"    📈 {len(dataset)} registros\")
-            print(f\"    💾 Tamaño: {len(str(dataset)) / 1024:.2f} KB\\n\")
+            print(f"    ✅ Dataset exportado a: {output_file}")
+            print(f"    📈 {len(dataset)} registros")
+            print(f"    💾 Tamaño: {len(str(dataset)) / 1024:.2f} KB\\n")
         
         # 6. Mostrar estadísticas
-        print(\"[6] Estadísticas del dataset...\\n\")
+        print("[6] Estadísticas del dataset...\\n")
         
         fraud_count = sum(1 for row in dataset if row['label'] == 1)
         legitimate_count = len(dataset) - fraud_count
@@ -160,38 +160,39 @@ def extract_dataset_from_postgresql():
         max_amount = max(row['amount'] for row in dataset)
         min_amount = min(row['amount'] for row in dataset)
         
-        print(f\"    Total transacciones: {len(dataset)}\")
-        print(f\"    Fraude: {fraud_count} ({fraud_count/len(dataset)*100:.1f}%)\")
-        print(f\"    Legítimas: {legitimate_count} ({legitimate_count/len(dataset)*100:.1f}%)\")
-        print(f\"    ---\")
-        print(f\"    Monto promedio: ${avg_amount:,.2f}\")
-        print(f\"    Monto mínimo: ${min_amount:,.2f}\")
-        print(f\"    Monto máximo: ${max_amount:,.2f}\")\n        print(f\"    ---\")
+        print(f"    Total transacciones: {len(dataset)}")
+        print(f"    Fraude: {fraud_count} ({fraud_count/len(dataset)*100:.1f}%)")
+        print(f"    Legítimas: {legitimate_count} ({legitimate_count/len(dataset)*100:.1f}%)")
+        print(f"    ---")
+        print(f"    Monto promedio: ${avg_amount:,.2f}")
+        print(f"    Monto mínimo: ${min_amount:,.2f}")
+        print(f"    Monto máximo: ${max_amount:,.2f}")
+        print(f"    ---")
         
         # Buyers nuevos vs existentes
         new_buyers = sum(1 for row in dataset if row['buyer_is_new'] == 1)
-        print(f\"    Buyers nuevos: {new_buyers} ({new_buyers/len(dataset)*100:.1f}%)\")
+        print(f"    Buyers nuevos: {new_buyers} ({new_buyers/len(dataset)*100:.1f}%)")
         
-        print(f\"\\n✨ Extracción completada\\n\")
+        print(f"\\n✨ Extracción completada\\n")
     
     except Exception as e:
-        print(f\"    ❌ Error: {e}\\n\")
+        print(f"    ❌ Error: {e}\\n")
     
     finally:
         connector.close()
-        print(\"    ✅ Conexión cerrada\\n\")
+        print("    ✅ Conexión cerrada\\n")
 
 
 def simulate_data_extraction():
-    \"\"\"
+    """
     Simulación sin BD real (para testing).
-    \"\"\"
+    """
     
-    print(\"\\n📊 SafeMarket Pocket SDK - Extracción Simulada\\n\")
-    print(\"(Este ejemplo simula datos sin conectar a BD real)\\n\")
+    print("\\n📊 SafeMarket Pocket SDK - Extracción Simulada\\n")
+    print("(Este ejemplo simula datos sin conectar a BD real)\\n")
     
     # Crear transacciones simuladas
-    print(\"[1] Generando transacciones simuladas...\")
+    print("[1] Generando transacciones simuladas...")
     
     simulated_transactions = [
         {
@@ -206,10 +207,10 @@ def simulate_data_extraction():
         for i in range(1000)
     ]
     
-    print(f\"    ✅ {len(simulated_transactions)} transacciones generadas\\n\")
+    print(f"    ✅ {len(simulated_transactions)} transacciones generadas\\n")
     
     # Construir features
-    print(\"[2] Construyendo features...\")
+    print("[2] Construyendo features...")
     
     extractor = FeatureExtractor()
     dataset = []
@@ -231,20 +232,20 @@ def simulate_data_extraction():
         }
         dataset.append(features_row)
     
-    print(f\"    ✅ Features construidos\\n\")
+    print(f"    ✅ Features construidos\\n")
     
     # Estadísticas
-    print(\"[3] Estadísticas...\\n\")
+    print("[3] Estadísticas...\\n")
     
     fraud_count = sum(1 for row in dataset if row['label'] == 1)
-    print(f\"    Total: {len(dataset)} transacciones\")
-    print(f\"    Fraude: {fraud_count} ({fraud_count/len(dataset)*100:.1f}%)\")
-    print(f\"    Legítimas: {len(dataset)-fraud_count} ({(len(dataset)-fraud_count)/len(dataset)*100:.1f}%)\")
+    print(f"    Total: {len(dataset)} transacciones")
+    print(f"    Fraude: {fraud_count} ({fraud_count/len(dataset)*100:.1f}%)")
+    print(f"    Legítimas: {len(dataset)-fraud_count} ({(len(dataset)-fraud_count)/len(dataset)*100:.1f}%)")
     
-    print(f\"\\n✨ Simulación completada\\n\")
+    print(f"\\n✨ Simulación completada\\n")
 
 
-if __name__ == \"__main__\":
+if __name__ == "__main__":
     # Ejecutar simulación (comentar para usar BD real)
     simulate_data_extraction()
     

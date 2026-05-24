@@ -49,37 +49,37 @@ class PostgreSQLConnector(DataConnectorBase):
     
     Ejemplo de uso completo:
         connector = PostgreSQLConnector(
-            connection_string=\"postgresql://user:pass@localhost:5432/mydb\",
-            transaction_table=\"transactions\",
-            buyer_table=\"users\",
-            seller_table=\"merchants\"
+            connection_string="postgresql://user:pass@localhost:5432/mydb",
+            transaction_table="transactions",
+            buyer_table="users",
+            seller_table="merchants"
         )
         
         try:
             # Validar conexión y esquema
             is_valid, errors = connector.validate()
             if not is_valid:
-                print(f\"Validation errors: {errors}\")
+                print(f"Validation errors: {errors}")
                 return
             
             # Extraer transacciones
             txs = connector.fetch_transactions(
-                query=\"\"\"
+                query='''
                     SELECT id, amount, buyer_id, seller_id, created_at, is_fraud
                     FROM transactions
                     WHERE created_at > NOW() - INTERVAL '30 days'
                     ORDER BY created_at DESC
-                \"\"\",
+                ''',
                 limit=50000
             )
             
             # Extraer históricos
             for tx in txs[:10]:
                 buyer_hist = connector.fetch_buyer_history(tx['buyer_id'])
-                print(f\"Buyer {tx['buyer_id']}: {buyer_hist['transaction_count']} txs\")
+                print(f"Buyer {tx['buyer_id']}: {buyer_hist['transaction_count']} txs")
         
         except (ConnectionError, DataExtractionError) as e:
-            logger.error(f\"Extraction error: {e}\")
+            logger.error(f"Extraction error: {e}")
         finally:
             connector.close()
     """
@@ -173,21 +173,21 @@ class PostgreSQLConnector(DataConnectorBase):
         for table_name, required_cols in tables.items():
             table_exists = self._table_exists(table_name)
             if not table_exists:
-                errors.append(f\"Table not found: {table_name}\")
+                errors.append(f"Table not found: {table_name}")
                 continue
             
             # Verificar columnas
             missing_cols = self._get_missing_columns(table_name, required_cols)
             for col in missing_cols:
                 errors.append(
-                    f\"Missing column '{col}' in table '{table_name}'\"
+                    f"Missing column '{col}' in table '{table_name}'"
                 )
         
         is_valid = len(errors) == 0
         if is_valid:
-            logger.info(\"✅ Schema validation passed\")
+            logger.info("✅ Schema validation passed")
         else:
-            logger.warning(f\"Schema validation failed: {errors}\")
+            logger.warning(f"Schema validation failed: {errors}")
         
         return is_valid, errors
     
@@ -213,24 +213,24 @@ class PostgreSQLConnector(DataConnectorBase):
         
         Ejemplo:
             txs = connector.fetch_transactions(
-                query=\"\"\"
+                query='''
                     SELECT * FROM transactions
                     WHERE created_at > NOW() - INTERVAL '30 days'
-                \"\"\",
+                ''',
                 limit=5000
             )
-        \"\"\"
+        """
         if not self.is_connected:
-            raise ConnectionError(\"Not connected to database\")
+            raise ConnectionError("Not connected to database")
         
         try:
             if query is None:
-                query = f\"SELECT * FROM {self.transaction_table} LIMIT %s OFFSET %s\"
+                query = f"SELECT * FROM {self.transaction_table} LIMIT %s OFFSET %s"
                 self.cursor.execute(query, (limit, offset))
             else:
                 # Añadir LIMIT si no está en la query
-                if \"LIMIT\" not in query.upper():
-                    query += f\" LIMIT {limit} OFFSET {offset}\"
+                if "LIMIT" not in query.upper():
+                    query += f" LIMIT {limit} OFFSET {offset}"
                 self.cursor.execute(query)
             
             columns = [desc[0] for desc in self.cursor.description]
@@ -239,16 +239,16 @@ class PostgreSQLConnector(DataConnectorBase):
             for row in self.cursor.fetchall():
                 transactions.append(dict(zip(columns, row)))
             
-            logger.info(f\"Fetched {len(transactions)} transactions\")
+            logger.info(f"Fetched {len(transactions)} transactions")
             return transactions
         
         except Error as e:
-            error_msg = f\"Query execution failed: {str(e)}\"
+            error_msg = f"Query execution failed: {str(e)}"
             logger.error(error_msg)
             raise DataExtractionError(error_msg, query=query)
     
     def fetch_buyer_history(self, buyer_id: str) -> Dict[str, Any]:
-        \"\"\"
+        """
         Obtiene histórico de un buyer.
         
         Args:
@@ -259,9 +259,9 @@ class PostgreSQLConnector(DataConnectorBase):
         
         Raises:
             DataExtractionError: Si hay error en la query
-        \"\"\"
+        """
         try:
-            query = f\"\"\"
+            query = f"""
                 SELECT 
                     COUNT(*) as transaction_count,
                     AVG(amount) as avg_amount,
@@ -271,7 +271,7 @@ class PostgreSQLConnector(DataConnectorBase):
                     MAX(created_at) as last_transaction_date
                 FROM {self.transaction_table}
                 WHERE buyer_id = %s
-            \"\"\"
+            """
             
             self.cursor.execute(query, (buyer_id,))
             row = self.cursor.fetchone()
@@ -280,12 +280,12 @@ class PostgreSQLConnector(DataConnectorBase):
             return dict(zip(columns, row)) if row else {}
         
         except Error as e:
-            error_msg = f\"Failed to fetch buyer history: {str(e)}\"
+            error_msg = f"Failed to fetch buyer history: {str(e)}"
             logger.error(error_msg)
             raise DataExtractionError(error_msg, query=query)
     
     def fetch_seller_history(self, seller_id: str) -> Dict[str, Any]:
-        \"\"\"
+        """
         Obtiene histórico de un seller.
         
         Args:
@@ -293,9 +293,9 @@ class PostgreSQLConnector(DataConnectorBase):
         
         Returns:
             dict: Histórico
-        \"\"\"
+        """
         try:
-            query = f\"\"\"
+            query = f"""
                 SELECT 
                     COUNT(*) as transaction_count,
                     AVG(amount) as avg_amount,
@@ -303,7 +303,7 @@ class PostgreSQLConnector(DataConnectorBase):
                     MAX(amount) as max_amount
                 FROM {self.transaction_table}
                 WHERE seller_id = %s
-            \"\"\"
+            """
             
             self.cursor.execute(query, (seller_id,))
             row = self.cursor.fetchone()
@@ -312,30 +312,30 @@ class PostgreSQLConnector(DataConnectorBase):
             return dict(zip(columns, row)) if row else {}
         
         except Error as e:
-            error_msg = f\"Failed to fetch seller history: {str(e)}\"
+            error_msg = f"Failed to fetch seller history: {str(e)}"
             logger.error(error_msg)
             raise DataExtractionError(error_msg, query=query)
     
     def close(self) -> None:
-        \"\"\"Cierra la conexión.\"\"\"
+        """Cierra la conexión."""
         if self.cursor:
             self.cursor.close()
         if self.connection:
             self.connection.close()
         self.is_connected = False
-        logger.info(\"✅ PostgreSQL connection closed\")
+        logger.info("✅ PostgreSQL connection closed")
     
     # Métodos privados
     
     def _table_exists(self, table_name: str) -> bool:
-        \"\"\"Verifica si una tabla existe.\"\"\"
+        """Verifica si una tabla existe."""
         try:
-            query = \"\"\"
+            query = """
                 SELECT EXISTS(
                     SELECT 1 FROM information_schema.tables
                     WHERE table_name = %s
                 )
-            \"\"\"
+            """
             self.cursor.execute(query, (table_name,))
             return self.cursor.fetchone()[0]
         except Error:
@@ -346,12 +346,12 @@ class PostgreSQLConnector(DataConnectorBase):
         table_name: str,
         required_columns: List[str]
     ) -> List[str]:
-        \"\"\"Retorna columnas que faltan en la tabla.\"\"\"
+        """Retorna columnas que faltan en la tabla."""
         try:
-            query = \"\"\"
+            query = """
                 SELECT column_name FROM information_schema.columns
                 WHERE table_name = %s
-            \"\"\"
+            """
             self.cursor.execute(query, (table_name,))
             existing_cols = [row[0] for row in self.cursor.fetchall()]
             return [col for col in required_columns if col not in existing_cols]

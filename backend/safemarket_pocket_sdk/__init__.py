@@ -1,4 +1,4 @@
-\"\"\"
+"""
 SafeMarket Pocket SDK
 =======================
 
@@ -20,30 +20,30 @@ Uso Rápido (Standalone):
     adapter = SafeMarketAdapter()
     
     tx = Transaction(
-        id=\"tx_123\",
+        id="tx_123",
         amount=1000.0,
-        buyer_id=\"buyer_456\",
-        seller_id=\"seller_789\"
+        buyer_id="buyer_456",
+        seller_id="seller_789"
     )
     
     result = adapter.validate_transaction(tx)
-    print(f\"Decision: {result['decision']}, Score: {result['score']}\")
+    print(f"Decision: {result['decision']}, Score: {result['score']}")
 
 Uso Avanzado (Con datos históricos):
     # Configurar históricos (idealmente de BD)
     adapter.set_buyer_data(
-        buyer_id=\"buyer_456\",
+        buyer_id="buyer_456",
         tx_count=50,
         avg_amount=500.0
     )
     
     # Añadir regla personalizada
     adapter.add_custom_rule(
-        name=\"high_vip_threshold\",
+        name="high_vip_threshold",
         condition=lambda f: f.amount > 50000 and not f.buyer_is_new,
         score_delta=-15,
-        severity=\"LOW\",
-        reason=\"Large transaction from established buyer\"
+        severity="LOW",
+        reason="Large transaction from established buyer"
     )
     
     result = adapter.validate_transaction(tx)
@@ -52,23 +52,23 @@ Uso Avanzado (Con datos históricos):
     if result['decision'] == 'MANUAL_REVIEW':
         # ... revisar manualmente ...
         adapter.submit_feedback(
-            transaction_id=\"tx_123\",
-            label=\"LEGITIMATE\",
-            reviewer_id=\"reviewer_1\"
+            transaction_id="tx_123",
+            label="LEGITIMATE",
+            reviewer_id="reviewer_1"
         )
 
 Extracción de Datos para Entrenamientos:
     from safemarket_pocket_sdk.data import PostgreSQLConnector
     
     connector = PostgreSQLConnector(
-        connection_string=\"postgresql://user:pass@localhost/db\",
-        transaction_table=\"transactions\"
+        connection_string="postgresql://user:pass@localhost/db",
+        transaction_table="transactions"
     )
     
     try:
         if connector.validate()[0]:
             txs = connector.fetch_transactions(limit=50000)
-            print(f\"Extracted {len(txs)} transactions for training\")
+            print(f"Extracted {len(txs)} transactions for training")
     finally:
         connector.close()
 
@@ -77,10 +77,10 @@ Documentación Completa:
 
 Soporte y Contribuciones:
     SafeMarket - https://safemarket.io
-\"\"\"
+"""
 
-__version__ = \"1.0.0-alpha\"
-__author__ = \"SafeMarket Team\"
+__version__ = "1.0.0-alpha"
+__author__ = "SafeMarket Team"
 __all__ = [
     # Core
     'Transaction',
@@ -132,7 +132,7 @@ def create_adapter(
     api_key: str = None,
     config: Config = None
 ) -> SafeMarketAdapter:
-    \"\"\"
+    """
     Factory function para crear un adaptador configurado.
     
     Args:
@@ -146,7 +146,7 @@ def create_adapter(
     Ejemplo:
         adapter = create_adapter(use_remote_api=False)
         result = adapter.validate_transaction(tx)
-    \"\"\"
+    """
     return SafeMarketAdapter(
         config=config,
         use_remote_api=use_remote_api,

@@ -116,6 +116,9 @@ class Config:
     USE_CACHE: bool = True
     CACHE_TTL_SECONDS: int = 3600
     
+    # Remote API mode
+    USE_REMOTE_API: bool = False
+    
     # Environment
     ENVIRONMENT: str = "development"
     
@@ -199,10 +202,11 @@ class Config:
         """
         errors = []
         
-        if not self.API_URL:
-            errors.append("API_URL must be configured")
-        if not self.API_KEY:
-            errors.append("API_KEY must be configured")
+        if self.USE_REMOTE_API:
+            if not self.API_URL:
+                errors.append("API_URL must be configured when USE_REMOTE_API is enabled")
+            if not self.API_KEY:
+                errors.append("API_KEY must be configured when USE_REMOTE_API is enabled")
         if self.MIN_SCORE_THRESHOLD >= self.MAX_SCORE_THRESHOLD:
             errors.append("MIN_SCORE_THRESHOLD must be < MAX_SCORE_THRESHOLD")
         if not (0 <= self.MIN_SCORE_THRESHOLD <= 100):

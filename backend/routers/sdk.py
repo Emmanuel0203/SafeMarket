@@ -11,6 +11,11 @@ from typing import Optional
 
 from db import get_db
 from ml.score_engine import ScoreEngine
+from fastapi.responses import JSONResponse
+from datetime import datetime
+
+# In-memory transaction log for SDK scoring (approved/rejected)
+TRANSACTION_LOGS = []
 
 router = APIRouter(prefix="/sdk", tags=["SDK"])
 
@@ -83,6 +88,24 @@ def sdk_score(
 
     try:
         result = ScoreEngine(db=db).score(tx=tx)
+
+        # Store a log entry for observability/testing
+        log_entry = {
+            "transaction": tx,
+            "result": {
+                "overall_score": result.overall_score,
+                "fraud_probability": result.fraud_probability,
+                "risk_level": result.risk_level,
+                "decision": result.decision,
+                "confidence_level": result.confidence_level,
+                "triggered_rules": result.triggered_rules,
+                "risk_factors": result.risk_factors,
+                "explanation": result.explanation,
+            },
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+        TRANSACTION_LOGS.append(log_entry)
+
         return {
             "overall_score":     result.overall_score,
             "fraud_probability": result.fraud_probability,
@@ -111,3 +134,12 @@ def sdk_status(api_key: str = Depends(validate_api_key)):
         "version": "1.0.0",
         "message": "✅ SafeMarket SDK conectado correctamente.",
     }
+
+
+@router.get("/logs")
+def sdk_logs(api_key: str = Depends(validate_api_key)):
+    """Retorna los logs en memoria de las transacciones validadas por el SDK.
+
+    Útil para pruebas y debugging local. No es persistente.
+    """
+    return JSONResponse(content={"count": len(TRANSACTION_LOGS), "logs": TRANSACTION_LOGS})

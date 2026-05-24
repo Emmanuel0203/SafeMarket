@@ -12,25 +12,29 @@ Uso:
     from safemarket_pocket_sdk.core import Transaction, DecisionType
     
     # Crear adaptador
-    adapter = SafeMarketAdapter(api_url=\"https://api.safemarket.io\")
+    adapter = SafeMarketAdapter(api_url="https://api.safemarket.io")
     
     # Scoring de transacción
     tx = Transaction(
-        id=\"tx_123\",
+        id="tx_123",
         amount=1000,
-        buyer_id=\"buyer_456\",
-        seller_id=\"seller_789\"
+        buyer_id="buyer_456",
+        seller_id="seller_789"
     )
     
     result = adapter.validate_transaction(tx)
     
     if result['approved']:
-        print(\"✅ Transacción aprobada\")
+        print("✅ Transacción aprobada")
     else:
-        print(f\"❌ Rechazada. Razón: {result['reason']}\")
+        print(f"❌ Rechazada. Razón: {result['reason']}")
 """
 
+import json
 import logging
+import urllib.request
+import urllib.error
+from urllib.parse import urljoin
 from typing import Optional, Dict, Any, List
 from datetime import datetime
 
@@ -40,6 +44,9 @@ from safemarket_pocket_sdk.core import (
     ScoringResult,
     DecisionType,
     RiskLevel,
+    ConfigError,
+    ConnectionError,
+    IntegrationError,
 )
 from safemarket_pocket_sdk.features import FeatureExtractor
 from safemarket_pocket_sdk.scoring import ScoreEngine
@@ -49,7 +56,7 @@ logger = logging.getLogger(__name__)
 
 
 class SafeMarketAdapter:
-    \"\"\"
+    """
     Adaptador para integradores externos.
     
     Proporciona una interfaz simple para scoring de transacciones
@@ -70,35 +77,35 @@ class SafeMarketAdapter:
         
         # Configurar históricos (idealmente de BD)
         adapter.set_buyer_data(
-            buyer_id=\"buyer_123\",
+            buyer_id="buyer_123",
             tx_count=50,
             avg_amount=500.0
         )
         
         # Scoring
         tx = Transaction(
-            id=\"tx_1\",
+            id="tx_1",
             amount=1500,
-            buyer_id=\"buyer_123\",
-            seller_id=\"seller_456\",
-            category=\"electronics\"
+            buyer_id="buyer_123",
+            seller_id="seller_456",
+            category="electronics"
         )
         
         result = adapter.validate_transaction(tx)
-        print(f\"Score: {result['score']}\")
-        print(f\"Decision: {result['decision']}\")
-        print(f\"Factors: {result['risk_factors']}\")
+        print(f"Score: {result['score']}")
+        print(f"Decision: {result['decision']}")
+        print(f"Factors: {result['risk_factors']}")
         
         # Feedback
         if result['decision'] == 'MANUAL_REVIEW':
             # Después de revisión manual...
             adapter.submit_feedback(
-                transaction_id=\"tx_1\",
-                label=\"LEGITIMATE\",  # o \"FRAUD\"
-                reviewer_id=\"reviewer_1\",
-                notes=\"Buyer confirmó pago\"
+                transaction_id="tx_1",
+                label="LEGITIMATE",  # o "FRAUD"
+                reviewer_id="reviewer_1",
+                notes="Buyer confirmó pago"
             )
-    \"\"\"
+    """
     
     def __init__(
         self,
@@ -106,7 +113,7 @@ class SafeMarketAdapter:
         use_remote_api: bool = False,
         api_key: Optional[str] = None
     ):
-        \"\"\"
+        """
         Inicializa el adaptador.
         
         Args:
@@ -121,17 +128,22 @@ class SafeMarketAdapter:
             # Con integración remota
             adapter = SafeMarketAdapter(
                 use_remote_api=True,
-                api_key=\"sk_live_xxx\"
+                api_key="sk_live_xxx"
             )
-        \"\"\"
+        """
         self.config = config or Config()
-        self.use_remote_api = use_remote_api
-        self.api_key = api_key
-        
+        self.use_remote_api = use_remote_api or self.config.USE_REMOTE_API
+        self.api_key = api_key or self.config.API_KEY
+        self.remote_endpoint = None
+
+        if self.use_remote_api:
+            self._validate_remote_config()
+            self.remote_endpoint = urljoin(self.config.API_URL.rstrip('/') + '/', 'sdk/score')
+
         # Inicializar motores locales
         self.feature_extractor = FeatureExtractor()
         self.score_engine = ScoreEngine(config=self.config)
-        
+
         # Caché de feedback
         self.feedback_log: List[Dict[str, Any]] = []
     
@@ -140,7 +152,7 @@ class SafeMarketAdapter:
         transaction: Transaction,
         timeout_ms: int = 100
     ) -> Dict[str, Any]:
-        \"\"\"
+        """
         Valida y puntúa una transacción.
         
         Este es el método principal de integración.
@@ -176,7 +188,7 @@ class SafeMarketAdapter:
             else:
                 # Rechazar
                 reject_payment(tx, result['reason'])
-        \"\"\"
+        """
         try:
             # Validar estructura
             is_valid, errors = transaction.validate()
@@ -189,11 +201,14 @@ class SafeMarketAdapter:
                     'decision': 'DECLINE',
                     'risk_factors': errors,
                     'confidence': 1.0,
-                    'reason': f\"Invalid transaction: {', '.join(errors)}\",
+                    'reason': f"Invalid transaction: {', '.join(errors)}",
                     'ttl_seconds': 3600,
                     'timestamp': datetime.utcnow().isoformat(),
                 }
             
+            if self.use_remote_api:
+                return self._validate_transaction_remote(transaction, timeout_ms=timeout_ms)
+
             # Extraer features
             features = self.feature_extractor.extract(transaction)
             
@@ -215,7 +230,7 @@ class SafeMarketAdapter:
             }
         
         except Exception as e:
-            logger.error(f\"Error validating transaction: {str(e)}\")
+            logger.error(f"Error validating transaction: {str(e)}")
             return {
                 'transaction_id': transaction.id,
                 'approved': False,
@@ -236,7 +251,7 @@ class SafeMarketAdapter:
         avg_amount: float,
         is_new: bool = False
     ) -> None:
-        \"\"\"
+        """
         Establece datos históricos de un buyer.
         
         En producción, estos datos se cargarían de la BD.
@@ -249,21 +264,21 @@ class SafeMarketAdapter:
         
         Ejemplo:
             # Cargar datos de buyer
-            buyer_data = db.get_buyer_stats(\"buyer_123\")
+            buyer_data = db.get_buyer_stats("buyer_123")
             adapter.set_buyer_data(
-                buyer_id=\"buyer_123\",
+                buyer_id="buyer_123",
                 tx_count=buyer_data['tx_count'],
                 avg_amount=buyer_data['avg_amount'],
                 is_new=buyer_data['is_new']
             )
-        \"\"\"
+        """
         self.feature_extractor.set_buyer_history(
             buyer_id=buyer_id,
             tx_count=tx_count,
             avg_amount=avg_amount,
             is_new=is_new
         )
-        logger.debug(f\"Set buyer data for {buyer_id}\")
+        logger.debug(f"Set buyer data for {buyer_id}")
     
     def set_seller_data(
         self,
@@ -271,30 +286,30 @@ class SafeMarketAdapter:
         tx_count: int,
         avg_amount: float
     ) -> None:
-        \"\"\"
+        """
         Establece datos históricos de un seller.
         
         Args:
             seller_id (str): ID del seller
             tx_count (int): Cantidad de transacciones
             avg_amount (float): Monto promedio
-        \"\"\"
+        """
         self.feature_extractor.set_seller_history(
             seller_id=seller_id,
             tx_count=tx_count,
             avg_amount=avg_amount
         )
-        logger.debug(f\"Set seller data for {seller_id}\")
+        logger.debug(f"Set seller data for {seller_id}")
     
     def add_custom_rule(
         self,
         name: str,
         condition,
         score_delta: float,
-        severity: str = \"LOW\",
-        reason: str = \"\"
+        severity: str = "LOW",
+        reason: str = ""
     ) -> None:
-        \"\"\"
+        """
         Añade regla de negocio personalizada.
         
         Permite integradores definir reglas específicas de su dominio.
@@ -309,22 +324,22 @@ class SafeMarketAdapter:
         Ejemplo:
             # Regla: rechazar si buyer es de países bloqueados
             adapter.add_custom_rule(
-                name=\"blocked_countries\",
-                condition=lambda f: f.buyer_country in [\"KP\", \"IR\"],
+                name="blocked_countries",
+                condition=lambda f: f.buyer_country in ["KP", "IR"],
                 score_delta=+100,
-                severity=\"CRITICAL\",
-                reason=\"Buyer from sanctioned country\"
+                severity="CRITICAL",
+                reason="Buyer from sanctioned country"
             )
             
             # Regla: confianza extra si es cliente VIP
             adapter.add_custom_rule(
-                name=\"vip_customer\",
+                name="vip_customer",
                 condition=lambda f: f.metadata.get('is_vip'),
                 score_delta=-20,
-                severity=\"LOW\",
-                reason=\"VIP customer\"
+                severity="LOW",
+                reason="VIP customer"
             )
-        \"\"\"
+        """
         self.score_engine.rules_engine.add_rule(
             name=name,
             condition=condition,
@@ -332,7 +347,7 @@ class SafeMarketAdapter:
             severity=severity,
             reason=reason
         )
-        logger.info(f\"Added custom rule: {name}\")
+        logger.info(f"Added custom rule: {name}")
     
     def submit_feedback(
         self,
@@ -341,7 +356,7 @@ class SafeMarketAdapter:
         reviewer_id: Optional[str] = None,
         notes: Optional[str] = None
     ) -> bool:
-        \"\"\"
+        """
         Registra feedback humano sobre una transacción.
         
         Este feedback se usa para:
@@ -351,7 +366,7 @@ class SafeMarketAdapter:
         
         Args:
             transaction_id (str): ID de la transacción
-            label (str): Clasificación (\"FRAUD\" o \"LEGITIMATE\")
+            label (str): Clasificación ("FRAUD" o "LEGITIMATE")
             reviewer_id (str): ID de quien hizo la revisión
             notes (str): Notas del reviewer
         
@@ -361,12 +376,12 @@ class SafeMarketAdapter:
         Ejemplo:
             # Después de revisión manual
             adapter.submit_feedback(
-                transaction_id=\"tx_123\",
-                label=\"FRAUD\",
-                reviewer_id=\"reviewer_user_1\",
-                notes=\"Buyer denies transaction\"
+                transaction_id="tx_123",
+                label="FRAUD",
+                reviewer_id="reviewer_user_1",
+                notes="Buyer denies transaction"
             )
-        \"\"\"
+        """
         try:
             feedback_record = {
                 'transaction_id': transaction_id,
@@ -377,7 +392,7 @@ class SafeMarketAdapter:
             }
             
             self.feedback_log.append(feedback_record)
-            logger.info(f\"Feedback registered for {transaction_id}: {label}\")
+            logger.info(f"Feedback registered for {transaction_id}: {label}")
             
             # En producción, enviar a API para reentrenamiento
             if self.use_remote_api and self.api_key:
@@ -386,20 +401,20 @@ class SafeMarketAdapter:
             return True
         
         except Exception as e:
-            logger.error(f\"Error registering feedback: {e}\")
+            logger.error(f"Error registering feedback: {e}")
             return False
     
     def get_feedback_log(self) -> List[Dict[str, Any]]:
-        \"\"\"
+        """
         Retorna log de todos los feedbacks registrados.
         
         Returns:
             list[dict]: Lista de registros de feedback
-        \"\"\"
+        """
         return self.feedback_log.copy()
     
     def get_model_health(self) -> Dict[str, Any]:
-        \"\"\"
+        """
         Retorna métricas de salud del modelo.
         
         Returns:
@@ -407,9 +422,9 @@ class SafeMarketAdapter:
         
         Ejemplo:
             health = adapter.get_model_health()
-            print(f\"Model version: {health['model_version']}\")
-            print(f\"Rules configured: {health['rules_count']}\")
-        \"\"\"
+            print(f"Model version: {health['model_version']}")
+            print(f"Rules configured: {health['rules_count']}")
+        """
         return {
             'model_version': self.config.MODEL_VERSION,
             'rules_count': len(self.score_engine.rules_engine.rules),
@@ -420,21 +435,127 @@ class SafeMarketAdapter:
     # Métodos privados
     
     def _build_reason(self, score_result: ScoringResult) -> str:
-        \"\"\"Construye explicación legible de la decisión.\"\"\"
+        """Construye explicación legible de la decisión."""
         parts = []
         
         if score_result.decision == DecisionType.APPROVE:
-            parts.append(f\"Low risk score ({score_result.score:.0f})\")
+            parts.append(f"Low risk score ({score_result.score:.0f})")
         elif score_result.decision == DecisionType.MANUAL_REVIEW:
-            parts.append(f\"Medium risk score ({score_result.score:.0f})\")
-            parts.append(f\"Risk factors: {', '.join(score_result.risk_factors[:3])}\")
+            parts.append(f"Medium risk score ({score_result.score:.0f})")
+            parts.append(f"Risk factors: {', '.join(score_result.risk_factors[:3])}")
         else:
-            parts.append(f\"High risk score ({score_result.score:.0f})\")
-            parts.append(f\"Risk factors: {', '.join(score_result.risk_factors)}\")
+            parts.append(f"High risk score ({score_result.score:.0f})")
+            parts.append(f"Risk factors: {', '.join(score_result.risk_factors)}")
         
-        return \"; \".join(parts) if parts else \"No factors\"
+        return "; ".join(parts) if parts else "No factors"
     
     def _send_feedback_to_api(self, feedback_record: Dict[str, Any]) -> None:
-        \"\"\"Envía feedback al API remoto de SafeMarket.\"\"\"
-        # Implementar cuando haya API integrado
-        pass
+        """Envía feedback al API remoto de SafeMarket."""
+        if not self.use_remote_api:
+            return
+
+        endpoint = urljoin(self.config.API_URL.rstrip('/') + '/', 'sdk/feedback')
+        payload = {
+            'transaction_id': feedback_record['transaction_id'],
+            'label': feedback_record['label'],
+            'reviewer_id': feedback_record.get('reviewer_id'),
+            'notes': feedback_record.get('notes'),
+            'timestamp': feedback_record['timestamp'],
+        }
+
+        try:
+            data = json.dumps(payload).encode('utf-8')
+            request = urllib.request.Request(
+                endpoint,
+                data=data,
+                method='POST',
+                headers={
+                    'Content-Type': 'application/json',
+                    'X-API-KEY': self.api_key,
+                }
+            )
+            with urllib.request.urlopen(request, timeout=self.config.API_TIMEOUT_MS / 1000):
+                logger.info(f"Feedback sent to remote API for {feedback_record['transaction_id']}")
+        except Exception as e:
+            logger.error(f"Failed to send feedback to remote API: {e}")
+            raise ConnectionError(f"Cannot send feedback to remote SafeMarket API: {e}")
+
+    def _validate_remote_config(self) -> None:
+        """Valida la configuración para llamadas remotas."""
+        if not self.config.API_URL:
+            raise ConfigError("API_URL must be configured when using remote API mode")
+        if not self.api_key:
+            raise ConfigError("API_KEY must be configured when using remote API mode")
+
+    def _validate_transaction_remote(self, transaction: Transaction, timeout_ms: int = 100) -> Dict[str, Any]:
+        """Realiza la validación de transacción contra el backend remoto."""
+        payload = self._build_remote_payload(transaction)
+        response = self._call_remote_api(payload, timeout_ms=timeout_ms)
+
+        if not isinstance(response, dict):
+            raise IntegrationError("Remote SafeMarket API returned invalid response")
+
+        return {
+            'transaction_id': response.get('transaction_id', transaction.id),
+            'approved': response.get('approved', False),
+            'score': response.get('score', 0),
+            'risk_level': response.get('risk_level', 'HIGH'),
+            'decision': response.get('decision', 'DECLINE'),
+            'risk_factors': response.get('risk_factors', []),
+            'confidence': response.get('confidence', 0),
+            'reason': response.get('reason', response.get('message', 'Remote validation failed')),
+            'ttl_seconds': response.get('ttl_seconds', 3600),
+            'timestamp': response.get('timestamp', datetime.utcnow().isoformat()),
+        }
+
+    def _build_remote_payload(self, transaction: Transaction) -> Dict[str, Any]:
+        """Construye el payload JSON para la llamada remota al backend."""
+        return {
+            'transaction_id': transaction.id,
+            'amount': transaction.amount,
+            'currency': transaction.currency,
+            'buyer_id': transaction.buyer_id,
+            'seller_id': transaction.seller_id,
+            'timestamp': transaction.timestamp.isoformat(),
+            'category': transaction.category,
+            'description': transaction.description,
+            'buyer_email': transaction.buyer_email,
+            'buyer_phone': transaction.buyer_phone,
+            'buyer_country': transaction.buyer_country,
+            'seller_country': transaction.seller_country,
+            'buyer_ip': transaction.buyer_ip,
+            'payment_method': transaction.payment_method,
+            'card_last_4': transaction.card_last_4,
+            'metadata': transaction.metadata,
+        }
+
+    def _call_remote_api(self, payload: Dict[str, Any], timeout_ms: int = 100) -> Any:
+        """Llama al backend remoto de SafeMarket con el payload dado."""
+        if not self.remote_endpoint:
+            raise ConfigError("Remote endpoint is not configured")
+
+        data = json.dumps(payload).encode('utf-8')
+        request = urllib.request.Request(
+            self.remote_endpoint,
+            data=data,
+            method='POST',
+            headers={
+                'Content-Type': 'application/json',
+                'X-API-KEY': self.api_key,
+            }
+        )
+
+        try:
+            with urllib.request.urlopen(request, timeout=timeout_ms / 1000) as resp:
+                body = resp.read().decode('utf-8')
+                return json.loads(body)
+        except urllib.error.HTTPError as e:
+            message = e.read().decode('utf-8') if e.fp is not None else e.reason
+            logger.error(f"Remote API HTTPError {e.code}: {message}")
+            raise ConnectionError(f"Remote SafeMarket API error: {e.code} - {message}")
+        except urllib.error.URLError as e:
+            logger.error(f"Remote API URLError: {e.reason}")
+            raise ConnectionError(f"Could not connect to remote SafeMarket API: {e.reason}")
+        except json.JSONDecodeError as e:
+            logger.error(f"Remote API invalid JSON response: {e}")
+            raise IntegrationError("Remote SafeMarket API returned invalid JSON")
