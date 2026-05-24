@@ -153,7 +153,7 @@ class RulesEngine:
     def _rule_high_risk_type(self, tx: dict) -> RuleResult:
         """TRANSFER y WITHDRAWAL concentran el 100% del fraude en el dataset."""
         tx_type   = tx.get("transaction_type", "")
-        triggered = tx_type in ("TRANSFER", "WITHDRAWAL")
+        triggered = tx_type in ("TRANSFER", "WITHDRAWAL", "CASH_OUT")
         return RuleResult(
             rule_name   = "HIGH_RISK_TYPE",
             triggered   = triggered,
@@ -171,7 +171,7 @@ class RulesEngine:
         new_bal   = float(tx.get("new_balance_orig") or 0)
         tx_type   = tx.get("transaction_type", "")
         triggered = (
-            tx_type in ("TRANSFER", "WITHDRAWAL")
+            tx_type in ("TRANSFER", "WITHDRAWAL", "CASH_OUT")
             and old_bal > 0
             and new_bal == 0
         )

@@ -1,0 +1,1359 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SafeMarket — Detección de Fraude para tu Plataforma</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --brand:   #1a3c6e;
+      --brand2:  #2563eb;
+      --green:   #0d9488;
+      --danger:  #ef4444;
+      --warn:    #f59e0b;
+      --light:   #eff6ff;
+      --gray:    #f4f7fb;
+      --border:  #e2e8f0;
+      --text:    #0f172a;
+      --sub:     #64748b;
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'DM Sans', sans-serif; color: var(--text); background: #fff; }
+
+    /* ── NAVBAR ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 40px; height: 64px;
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .nav-logo-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--brand2), var(--green));
+      border-radius: 10px; display: flex; align-items: center; justify-content: center;
+      font-family: 'Sora', sans-serif; font-weight: 800; color: #fff; font-size: 16px;
+    }
+    .nav-logo-text { font-family: 'Sora', sans-serif; font-weight: 700; font-size: 18px; color: var(--brand); }
+    .nav-links { display: flex; align-items: center; gap: 32px; }
+    .nav-links a { text-decoration: none; color: var(--sub); font-size: 14px; font-weight: 500; transition: color 0.2s; }
+    .nav-links a:hover { color: var(--brand); }
+    .nav-cta {
+      background: var(--brand); color: #fff; padding: 10px 22px;
+      border-radius: 10px; font-size: 14px; font-weight: 700;
+      text-decoration: none; transition: all 0.2s;
+    }
+    .nav-cta:hover { background: var(--brand2); transform: translateY(-1px); }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(160deg, #f0f7ff 0%, #ffffff 50%, #f0fdf9 100%);
+      padding: 100px 40px 60px; text-align: center; position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: ''; position: absolute; top: -200px; right: -200px;
+      width: 600px; height: 600px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(37,99,235,0.08) 0%, transparent 70%);
+    }
+    .hero::after {
+      content: ''; position: absolute; bottom: -200px; left: -200px;
+      width: 500px; height: 500px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(13,148,136,0.08) 0%, transparent 70%);
+    }
+    .hero-content { max-width: 780px; position: relative; z-index: 1; }
+    .hero-tag {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--light); color: var(--brand2);
+      padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 600;
+      margin-bottom: 28px; border: 1px solid #bfdbfe;
+    }
+    .hero-tag-dot { width: 7px; height: 7px; background: var(--green); border-radius: 50%; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.7;transform:scale(1.2)} }
+    .hero h1 {
+      font-family: 'Sora', sans-serif; font-size: 58px; font-weight: 800;
+      line-height: 1.1; color: var(--brand); margin-bottom: 24px;
+    }
+    .hero h1 span { color: var(--brand2); }
+    .hero p { font-size: 20px; color: var(--sub); line-height: 1.7; margin-bottom: 40px; max-width: 600px; margin-left: auto; margin-right: auto; }
+    .hero-btns { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+    .btn-hero-primary {
+      background: linear-gradient(135deg, var(--brand), var(--brand2));
+      color: #fff; padding: 16px 36px; border-radius: 14px;
+      font-size: 16px; font-weight: 700; text-decoration: none;
+      transition: all 0.2s; box-shadow: 0 8px 24px rgba(37,99,235,0.3);
+      font-family: 'Sora', sans-serif;
+    }
+    .btn-hero-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(37,99,235,0.4); }
+    .btn-hero-secondary {
+      background: #fff; color: var(--brand); padding: 16px 36px;
+      border-radius: 14px; font-size: 16px; font-weight: 700;
+      text-decoration: none; border: 2px solid var(--border);
+      transition: all 0.2s; font-family: 'Sora', sans-serif;
+    }
+    .btn-hero-secondary:hover { border-color: var(--brand2); color: var(--brand2); }
+
+    /* ── STATS ── */
+    .stats {
+      background: var(--brand); padding: 48px 40px;
+      display: flex; justify-content: center; gap: 80px; flex-wrap: wrap;
+    }
+    .stat { text-align: center; }
+    .stat-val { font-family: 'Sora', sans-serif; font-size: 42px; font-weight: 800; color: #fff; line-height: 1; }
+    .stat-label { font-size: 14px; color: rgba(255,255,255,0.65); margin-top: 6px; }
+
+    /* ── CÓMO FUNCIONA ── */
+    section { padding: 96px 40px; }
+    .section-tag {
+      display: inline-block; background: var(--light); color: var(--brand2);
+      padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px;
+    }
+    .section-title { font-family: 'Sora', sans-serif; font-size: 40px; font-weight: 800; color: var(--brand); margin-bottom: 12px; }
+    .section-sub { font-size: 18px; color: var(--sub); max-width: 560px; line-height: 1.6; margin-bottom: 56px; }
+    .centered { text-align: center; }
+    .centered .section-sub { margin-left: auto; margin-right: auto; }
+
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; max-width: 1000px; margin: 0 auto; }
+    .step-card { background: #fff; border-radius: 20px; padding: 32px; border: 1px solid var(--border); box-shadow: 0 2px 12px rgba(0,0,0,0.04); text-align: center; transition: all 0.2s; }
+    .step-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,0.08); }
+    .step-num { width: 52px; height: 52px; background: linear-gradient(135deg, var(--brand), var(--brand2)); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-family: 'Sora', sans-serif; font-weight: 800; font-size: 22px; color: #fff; margin: 0 auto 20px; }
+    .step-title { font-family: 'Sora', sans-serif; font-size: 18px; font-weight: 700; color: var(--brand); margin-bottom: 10px; }
+    .step-desc { font-size: 14px; color: var(--sub); line-height: 1.7; }
+
+    /* ── CÓDIGO DE INTEGRACIÓN ── */
+    .integration { background: var(--gray); }
+    .integration-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; max-width: 1100px; margin: 0 auto; }
+    .code-window { background: #0f172a; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+    .code-topbar { display: flex; align-items: center; gap: 8px; padding: 14px 18px; background: #1e293b; }
+    .code-dot { width: 12px; height: 12px; border-radius: 50%; }
+    .code-dot-r { background: #ef4444; }
+    .code-dot-y { background: #f59e0b; }
+    .code-dot-g { background: #22c55e; }
+    .code-filename { font-size: 12px; color: #64748b; margin-left: 8px; font-family: monospace; }
+    .code-body { padding: 24px; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.8; }
+    .c-comment { color: #475569; }
+    .c-tag     { color: #f472b6; }
+    .c-attr    { color: #93c5fd; }
+    .c-string  { color: #86efac; }
+    .c-key     { color: #c084fc; }
+    .c-fn      { color: #60a5fa; }
+    .c-val     { color: #fcd34d; }
+
+    .integration-features { display: flex; flex-direction: column; gap: 20px; }
+    .int-feature { display: flex; gap: 16px; align-items: flex-start; }
+    .int-feature-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+    .int-feature-icon.blue  { background: var(--light); }
+    .int-feature-icon.green { background: #ecfdf5; }
+    .int-feature-icon.yellow{ background: #fffbeb; }
+    .int-feature-title { font-family: 'Sora', sans-serif; font-size: 15px; font-weight: 700; color: var(--brand); margin-bottom: 4px; }
+    .int-feature-desc  { font-size: 13px; color: var(--sub); line-height: 1.6; }
+
+    /* ── PLATAFORMAS ── */
+    .platforms-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; max-width: 900px; margin: 0 auto; }
+    .platform-card {
+      background: #fff; border: 1px solid var(--border); border-radius: 16px;
+      padding: 24px 16px; text-align: center;
+      transition: all 0.2s; cursor: default;
+    }
+    .platform-card:hover { border-color: var(--brand2); box-shadow: 0 4px 20px rgba(37,99,235,0.1); transform: translateY(-2px); }
+    .platform-emoji { font-size: 36px; margin-bottom: 10px; }
+    .platform-name { font-family: 'Sora', sans-serif; font-size: 14px; font-weight: 700; color: var(--brand); margin-bottom: 4px; }
+    .platform-tag  { font-size: 11px; color: var(--sub); }
+
+    /* ── WIDGETS PREVIEW ── */
+    .widgets-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; max-width: 1000px; margin: 0 auto; }
+    .widget-preview { background: #fff; border-radius: 20px; padding: 28px; border: 1px solid var(--border); box-shadow: 0 2px 12px rgba(0,0,0,0.04); }
+    .widget-preview-title { font-family: 'Sora', sans-serif; font-size: 15px; font-weight: 700; color: var(--brand); margin-bottom: 6px; }
+    .widget-preview-desc  { font-size: 13px; color: var(--sub); margin-bottom: 20px; line-height: 1.5; }
+    .mock-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 700; }
+    .mock-badge-green  { background: #dcfce7; color: #16a34a; }
+    .mock-badge-yellow { background: #fef9c3; color: #ca8a04; }
+    .mock-badge-red    { background: #fee2e2; color: #dc2626; }
+    .mock-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+    .mock-panel { background: var(--brand); border-radius: 12px; padding: 12px 16px; color: #fff; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .mock-alert { background: #fff8f8; border: 1px solid #fecaca; border-radius: 10px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; font-size: 12px; }
+    .mock-modal { background: var(--gray); border-radius: 12px; padding: 16px; text-align: center; }
+    .mock-modal-icon { font-size: 28px; margin-bottom: 8px; }
+    .mock-modal-text { font-size: 12px; color: var(--sub); margin-bottom: 12px; }
+    .mock-modal-btns { display: flex; gap: 8px; }
+    .mock-btn { flex: 1; padding: 7px; border-radius: 8px; font-size: 11px; font-weight: 700; border: none; cursor: pointer; }
+    .mock-btn-primary { background: var(--brand); color: #fff; }
+    .mock-btn-secondary { background: #e2e8f0; color: var(--sub); }
+
+    /* ── PRECIOS ── */
+    .pricing { background: var(--gray); }
+    .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; max-width: 900px; margin: 0 auto; }
+    .pricing-card { background: #fff; border-radius: 20px; padding: 32px; border: 2px solid var(--border); transition: all 0.2s; }
+    .pricing-card.featured { border-color: var(--brand2); box-shadow: 0 8px 32px rgba(37,99,235,0.15); }
+    .pricing-card:hover { transform: translateY(-4px); }
+    .pricing-badge { background: var(--brand2); color: #fff; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; display: inline-block; margin-bottom: 16px; }
+    .pricing-name  { font-family: 'Sora', sans-serif; font-size: 20px; font-weight: 800; color: var(--brand); margin-bottom: 6px; }
+    .pricing-price { font-family: 'Sora', sans-serif; font-size: 42px; font-weight: 800; color: var(--brand); line-height: 1; margin-bottom: 4px; }
+    .pricing-price span { font-size: 16px; font-weight: 500; color: var(--sub); }
+    .pricing-desc  { font-size: 13px; color: var(--sub); margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+    .pricing-feature { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--sub); margin-bottom: 10px; }
+    .pricing-feature::before { content: '✓'; color: var(--green); font-weight: 700; font-size: 14px; }
+    .pricing-btn { display: block; text-align: center; padding: 12px; border-radius: 10px; font-size: 14px; font-weight: 700; text-decoration: none; margin-top: 24px; transition: all 0.2s; font-family: 'Sora', sans-serif; }
+    .pricing-btn-primary { background: var(--brand); color: #fff; }
+    .pricing-btn-primary:hover { background: var(--brand2); }
+    .pricing-btn-secondary { background: var(--light); color: var(--brand); }
+    .pricing-btn-secondary:hover { background: #dbeafe; }
+
+    /* ── REGISTRO ── */
+    #registro { background: linear-gradient(160deg, #f0f7ff, #f0fdf9); }
+    .register-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; max-width: 1000px; margin: 0 auto; }
+    .register-card { background: #fff; border-radius: 24px; padding: 40px; box-shadow: 0 20px 60px rgba(0,0,0,0.08); border: 1px solid var(--border); }
+    .register-title { font-family: 'Sora', sans-serif; font-size: 26px; font-weight: 800; color: var(--brand); margin-bottom: 8px; }
+    .register-sub   { font-size: 14px; color: var(--sub); margin-bottom: 28px; }
+    .form-group { margin-bottom: 16px; }
+    .form-label { font-size: 13px; font-weight: 600; color: #374151; display: block; margin-bottom: 6px; }
+    .form-input {
+      width: 100%; padding: 12px 16px; border: 1.5px solid var(--border);
+      border-radius: 12px; font-size: 14px; font-family: 'DM Sans', sans-serif;
+      outline: none; transition: border-color 0.2s; color: var(--text);
+    }
+    .form-input:focus { border-color: var(--brand2); }
+    .form-btn {
+      width: 100%; padding: 14px; background: linear-gradient(135deg, var(--brand), var(--brand2));
+      color: #fff; border: none; border-radius: 12px; font-size: 16px; font-weight: 700;
+      font-family: 'Sora', sans-serif; cursor: pointer; transition: all 0.2s; margin-top: 8px;
+    }
+    .form-btn:hover { opacity: 0.92; transform: translateY(-1px); }
+    .form-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .form-error { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; padding: 10px 14px; border-radius: 10px; font-size: 13px; margin-bottom: 16px; display: none; }
+    .form-error.visible { display: block; }
+
+    /* ── PANEL API KEY ── */
+    .apikey-panel { display: none; }
+    .apikey-panel.visible { display: block; }
+    .register-form { display: block; }
+    .register-form.hidden { display: none; }
+
+    .apikey-title { font-family: 'Sora', sans-serif; font-size: 22px; font-weight: 800; color: var(--brand); margin-bottom: 6px; }
+    .apikey-sub   { font-size: 14px; color: var(--sub); margin-bottom: 24px; }
+    .apikey-box   { background: #0f172a; border-radius: 12px; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+    .apikey-value { font-family: 'Courier New', monospace; font-size: 13px; color: #86efac; word-break: break-all; flex: 1; }
+    .apikey-copy  { background: var(--brand2); color: #fff; border: none; border-radius: 8px; padding: 8px 14px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+    .apikey-copy:hover { background: var(--brand); }
+    .apikey-info  { background: var(--light); border-radius: 12px; padding: 14px 16px; font-size: 13px; color: var(--brand); margin-bottom: 20px; border: 1px solid #bfdbfe; }
+    .apikey-snippet { background: #0f172a; border-radius: 12px; overflow: hidden; }
+    .apikey-snippet-top { padding: 10px 16px; background: #1e293b; font-size: 12px; color: #64748b; font-family: monospace; }
+    .apikey-snippet-code { padding: 16px; font-family: 'Courier New', monospace; font-size: 12px; line-height: 1.8; color: #e2e8f0; }
+
+    .register-benefits { display: flex; flex-direction: column; gap: 24px; }
+    .benefit { display: flex; gap: 16px; align-items: flex-start; }
+    .benefit-icon { width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; background: var(--light); }
+    .benefit-title { font-family: 'Sora', sans-serif; font-size: 16px; font-weight: 700; color: var(--brand); margin-bottom: 4px; }
+    .benefit-desc  { font-size: 13px; color: var(--sub); line-height: 1.6; }
+
+    /* ── FOOTER ── */
+    footer { background: var(--brand); padding: 48px 40px; text-align: center; }
+    .footer-logo { display: flex; align-items: center; gap: 10px; justify-content: center; margin-bottom: 16px; }
+    .footer-text { font-size: 14px; color: rgba(255,255,255,0.5); }
+
+    /* ── LOADER ── */
+    .loader { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 768px) {
+      .steps, .widgets-grid, .platforms-grid, .pricing-grid, .integration-grid, .register-grid { grid-template-columns: 1fr; }
+      .hero h1 { font-size: 36px; }
+      .stats { gap: 40px; }
+      nav { padding: 0 20px; }
+      .nav-links { display: none; }
+      section { padding: 64px 20px; }
+    }
+
+    /* ── Modal login ── */
+    .modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:none;align-items:center;justify-content:center;padding:20px;animation:fadein .2s ease; }
+    .modal-overlay.open { display:flex; }
+    @keyframes fadein { from{opacity:0} to{opacity:1} }
+    .modal-box { background:#fff;border-radius:24px;padding:40px;width:100%;max-width:420px;box-shadow:0 25px 80px rgba(0,0,0,.2);animation:slideup .25s ease;position:relative; }
+    @keyframes slideup { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
+    .modal-close { position:absolute;top:16px;right:16px;background:none;border:none;font-size:20px;cursor:pointer;color:#94a3b8;line-height:1;transition:color .2s; }
+    .modal-close:hover { color:#0f172a; }
+    .modal-logo { display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:24px; }
+    .modal-title { font-family:'Sora',sans-serif;font-size:22px;font-weight:800;color:#1a3c6e;text-align:center;margin-bottom:6px; }
+    .modal-sub { font-size:13px;color:#64748b;text-align:center;margin-bottom:24px; }
+    .modal-error { background:#fef2f2;border:1px solid #fecaca;color:#dc2626;padding:10px 14px;border-radius:10px;font-size:13px;margin-bottom:16px;display:none; }
+    .modal-error.visible { display:block; }
+    .m-label { font-size:13px;font-weight:600;color:#374151;display:block;margin-bottom:5px; }
+    .m-input { width:100%;padding:12px 16px;border:1.5px solid #e2e8f0;border-radius:12px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .2s;margin-bottom:14px; }
+    .m-input:focus { border-color:#2563eb; }
+    .m-btn { width:100%;padding:14px;background:linear-gradient(135deg,#1a3c6e,#2563eb);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;font-family:'Sora',sans-serif;cursor:pointer;transition:all .2s; }
+    .m-btn:hover { opacity:.9; }
+    .m-btn:disabled { opacity:.6;cursor:not-allowed; }
+    .m-loader { display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px; }
+    @keyframes spin { to{transform:rotate(360deg)} }
+
+    /* ── Panel cliente (después del login) ── */
+    .client-panel { position:fixed;inset:0;background:linear-gradient(160deg,#eff6ff,#f0fdf9);z-index:9998;display:none;align-items:center;justify-content:center;padding:24px; }
+    .client-panel.open { display:flex; }
+    .client-card { background:#fff;border-radius:24px;padding:48px 40px;width:100%;max-width:560px;box-shadow:0 20px 60px rgba(0,0,0,.08);border:1px solid #e2e8f0; }
+    .client-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:32px; }
+    .client-logo { display:flex;align-items:center;gap:10px; }
+    .client-logo-icon { width:36px;height:36px;background:linear-gradient(135deg,#2563eb,#0d9488);border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-weight:800;color:#fff;font-size:16px; }
+    .client-logo-text { font-family:'Sora',sans-serif;font-weight:700;font-size:17px;color:#1a3c6e; }
+    .client-logout { background:none;border:1.5px solid #e2e8f0;color:#64748b;padding:8px 16px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s; }
+    .client-logout:hover { border-color:#ef4444;color:#ef4444; }
+    .client-welcome { font-family:'Sora',sans-serif;font-size:24px;font-weight:800;color:#1a3c6e;margin-bottom:6px; }
+    .client-sub { font-size:14px;color:#64748b;margin-bottom:28px; }
+    .apikey-box { background:#0f172a;border-radius:12px;padding:16px 20px;display:flex;align-items:center;gap:12px;margin-bottom:16px; }
+    .apikey-val { font-family:'Courier New',monospace;font-size:13px;color:#86efac;flex:1;word-break:break-all; }
+    .apikey-copy-btn { background:#2563eb;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .2s;font-family:'DM Sans',sans-serif; }
+    .apikey-copy-btn:hover { background:#1a3c6e; }
+    .apikey-info { background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 16px;font-size:13px;color:#1e40af;margin-bottom:16px; }
+    .snippet-box { background:#0f172a;border-radius:12px;overflow:hidden;margin-bottom:20px; }
+    .snippet-top { padding:10px 16px;background:#1e293b;font-size:12px;color:#64748b;font-family:monospace; }
+    .snippet-code { padding:16px;font-family:'Courier New',monospace;font-size:12px;line-height:1.8;color:#e2e8f0; }
+    .client-demo-btn { display:block;width:100%;padding:13px;background:linear-gradient(135deg,#1a3c6e,#2563eb);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;font-family:'Sora',sans-serif;cursor:pointer;text-align:center;transition:all .2s; }
+    .client-demo-btn:hover { opacity:.9;transform:translateY(-1px); }
+
+  </style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<!-- ── NAVBAR ── -->
+<nav>
+  <a href="#" class="nav-logo">
+    <div class="nav-logo-icon">S</div>
+    <span class="nav-logo-text">SafeMarket</span>
+  </a>
+  <div class="nav-links">
+    <a href="#como-funciona">Cómo funciona</a>
+    <a href="#widgets">Widgets</a>
+    <a href="#integracion">Integración</a>
+    <a href="#precios">Precios</a>
+    <button onclick="openLoginModal()" style="background:none;border:1.5px solid var(--border);color:var(--brand);padding:10px 20px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;margin-right:8px;transition:all .2s" onmouseover="this.style.borderColor='var(--brand2)';this.style.color='var(--brand2)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--brand)'">Iniciar sesión</button>
+    <a href="#registro" class="nav-cta">Obtener API Key →</a>
+  </div>
+</nav>
+
+<!-- ── HERO ── -->
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-tag">
+      <span class="hero-tag-dot"></span>
+      Motor antifraude con IA · AUC-ROC 99.63%
+    </div>
+    <h1>Protege tu plataforma del <span>fraude financiero</span></h1>
+    <p>SafeMarket es un módulo de detección de fraude en tiempo real que se integra en cualquier plataforma con una sola línea de código. Sin configuraciones complejas.</p>
+    <div class="hero-btns">
+      <a href="#registro" class="btn-hero-primary">Empezar gratis →</a>
+      <a href="#como-funciona" class="btn-hero-secondary">Ver cómo funciona</a>
+    </div>
+  </div>
+</section>
+
+<!-- ── STATS ── -->
+<div class="stats">
+  <div class="stat"><div class="stat-val">99.88%</div><div class="stat-label">Accuracy del modelo</div></div>
+  <div class="stat"><div class="stat-val">99.63%</div><div class="stat-label">AUC-ROC</div></div>
+  <div class="stat"><div class="stat-val">100K+</div><div class="stat-label">Transacciones de entrenamiento</div></div>
+  <div class="stat"><div class="stat-val">&lt;200ms</div><div class="stat-label">Tiempo de respuesta</div></div>
+  <div class="stat"><div class="stat-val">12</div><div class="stat-label">Reglas antifraude</div></div>
+</div>
+
+<!-- ── CÓMO FUNCIONA ── -->
+<section id="como-funciona">
+  <div class="centered">
+    <span class="section-tag">Cómo funciona</span>
+    <h2 class="section-title">Tres pasos. Menos de 5 minutos.</h2>
+    <p class="section-sub">No necesitas cambiar tu sistema actual. SafeMarket se adapta a lo que ya tienes.</p>
+  </div>
+  <div class="steps">
+    <div class="step-card">
+      <div class="step-num">1</div>
+      <div class="step-title">Regístrate y obtén tu API Key</div>
+      <div class="step-desc">Crea tu cuenta con email y nombre de empresa. En segundos recibes tu clave única de acceso.</div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">2</div>
+      <div class="step-title">Pega una línea de código</div>
+      <div class="step-desc">Incluye el script de SafeMarket en tu plataforma. Compatible con Shopify, WooCommerce, React, Angular o HTML puro.</div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">3</div>
+      <div class="step-title">SafeMarket protege en tiempo real</div>
+      <div class="step-desc">Cada transacción es analizada por nuestro motor de IA antes de ser procesada. Tú decides qué hacer con el resultado.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── INTEGRACIÓN ── -->
+<section class="integration" id="integracion">
+  <div class="integration-grid">
+    <div>
+      <span class="section-tag">Integración</span>
+      <h2 class="section-title">Una línea. Listo.</h2>
+      <p class="section-sub" style="margin-bottom:32px">Sin instalar librerías, sin configurar servidores, sin cambiar tu base de datos.</p>
+      <div class="integration-features">
+        <div class="int-feature">
+          <div class="int-feature-icon blue">⚡</div>
+          <div>
+            <div class="int-feature-title">Integración instantánea</div>
+            <div class="int-feature-desc">Incluyes el script, pegas tu API Key y el módulo queda activo. Sin más configuración.</div>
+          </div>
+        </div>
+        <div class="int-feature">
+          <div class="int-feature-icon green">🔒</div>
+          <div>
+            <div class="int-feature-title">Autenticación segura</div>
+            <div class="int-feature-desc">Tu API Key es única e irrepetible. Todas las comunicaciones van cifradas por HTTPS.</div>
+          </div>
+        </div>
+        <div class="int-feature">
+          <div class="int-feature-icon yellow">🧠</div>
+          <div>
+            <div class="int-feature-title">IA + Reglas de negocio</div>
+            <div class="int-feature-desc">El modelo ML aporta el 65% del score. Las 12 reglas antifraude aportan el 35% restante.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="code-window">
+      <div class="code-topbar">
+        <div class="code-dot code-dot-r"></div>
+        <div class="code-dot code-dot-y"></div>
+        <div class="code-dot code-dot-g"></div>
+        <span class="code-filename">mi-tienda.html</span>
+      </div>
+      <div class="code-body">
+<span class="c-comment">&#x3C;!-- Paso 1: incluye el módulo --&#x3E;</span>
+<span class="c-tag">&#x3C;script</span>
+  <span class="c-attr">src</span>=<span class="c-string">"https://safemarket.co/sdk.js"</span>
+  <span class="c-attr">data-api-key</span>=<span class="c-string">"sm_live_tu_clave"</span><span class="c-tag">&#x3E;
+&#x3C;/script&#x3E;</span>
+
+<span class="c-comment">// Paso 2: analiza una transacción</span>
+<span class="c-key">const</span> result = <span class="c-key">await</span> <span class="c-fn">_safemarket</span>.<span class="c-fn">scoreTransaction</span>({
+  <span class="c-attr">amount</span>:           <span class="c-val">350000</span>,
+  <span class="c-attr">transaction_type</span>: <span class="c-string">"PURCHASE"</span>,
+  <span class="c-attr">user_id</span>:          <span class="c-string">"uuid-usuario"</span>,
+});
+
+<span class="c-comment">// Paso 3: toma la decisión</span>
+<span class="c-key">if</span> (result.decision === <span class="c-string">"APPROVE"</span>)  <span class="c-fn">procesarPago</span>();
+<span class="c-key">if</span> (result.decision === <span class="c-string">"REVIEW"</span>)   <span class="c-fn">pedirVerificacion</span>();
+<span class="c-key">if</span> (result.decision === <span class="c-string">"DECLINE"</span>)  <span class="c-fn">bloquearPago</span>();
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── WIDGETS ── -->
+<section id="widgets">
+  <div class="centered">
+    <span class="section-tag">Widgets</span>
+    <h2 class="section-title">3 widgets incluidos</h2>
+    <p class="section-sub">Se activan automáticamente al incluir el módulo. Sin configuración adicional.</p>
+  </div>
+  <div class="widgets-grid">
+    <div class="widget-preview">
+      <div class="widget-preview-title">🏷️ Badge de Riesgo</div>
+      <div class="widget-preview-desc">Aparece junto a cada transacción indicando su nivel de riesgo con color.</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div><span class="mock-badge mock-badge-green"><span class="mock-dot"></span>✅ Bajo riesgo · 12%</span></div>
+        <div><span class="mock-badge mock-badge-yellow"><span class="mock-dot"></span>⚠️ Riesgo medio · 48%</span></div>
+        <div><span class="mock-badge mock-badge-red"><span class="mock-dot"></span>🚫 Alto riesgo · 87%</span></div>
+      </div>
+    </div>
+    <div class="widget-preview">
+      <div class="widget-preview-title">🛡️ Panel de Alertas</div>
+      <div class="widget-preview-desc">Botón flotante que muestra todas las alertas de fraude en tiempo real.</div>
+      <div class="mock-panel">🛡️ SafeMarket <span style="background:rgba(255,255,255,0.2);padding:2px 8px;border-radius:10px;font-size:11px;margin-left:auto">3 alertas</span></div>
+      <div class="mock-alert">🚫 <div><div style="font-weight:700;font-size:12px">DECLINE · TRANSFER</div><div style="color:#94a3b8;font-size:11px">$5,000,000 · ACCOUNT_DRAIN</div></div></div>
+    </div>
+    <div class="widget-preview">
+      <div class="widget-preview-title">🔔 Modal de Verificación</div>
+      <div class="widget-preview-desc">Aparece automáticamente cuando una transacción requiere revisión manual.</div>
+      <div class="mock-modal">
+        <div class="mock-modal-icon">⚠️</div>
+        <div style="font-weight:700;font-size:13px;margin-bottom:4px">Verificación Requerida</div>
+        <div class="mock-modal-text">Probabilidad de fraude: 42.1%</div>
+        <div class="mock-modal-btns">
+          <button class="mock-btn mock-btn-secondary">Cancelar</button>
+          <button class="mock-btn mock-btn-primary">Confirmar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── PLATAFORMAS ── -->
+<section style="background:var(--gray);padding:64px 40px">
+  <div class="centered">
+    <span class="section-tag">Compatibilidad</span>
+    <h2 class="section-title">Funciona en cualquier plataforma</h2>
+    <p class="section-sub">Si tiene HTML, puede usar SafeMarket.</p>
+  </div>
+  <div class="platforms-grid">
+    <div class="platform-card"><div class="platform-emoji">🛍️</div><div class="platform-name">Shopify</div><div class="platform-tag">E-commerce</div></div>
+    <div class="platform-card"><div class="platform-emoji">🌐</div><div class="platform-name">WooCommerce</div><div class="platform-tag">WordPress</div></div>
+    <div class="platform-card"><div class="platform-emoji">⚛️</div><div class="platform-name">React</div><div class="platform-tag">Frontend</div></div>
+    <div class="platform-card"><div class="platform-emoji">🅰️</div><div class="platform-name">Angular</div><div class="platform-tag">Frontend</div></div>
+    <div class="platform-card"><div class="platform-emoji">💚</div><div class="platform-name">Vue.js</div><div class="platform-tag">Frontend</div></div>
+    <div class="platform-card"><div class="platform-emoji">🏦</div><div class="platform-name">Sistemas bancarios</div><div class="platform-tag">Fintech</div></div>
+    <div class="platform-card"><div class="platform-emoji">📱</div><div class="platform-name">Apps móviles</div><div class="platform-tag">WebView</div></div>
+    <div class="platform-card"><div class="platform-emoji">📄</div><div class="platform-name">HTML puro</div><div class="platform-tag">Cualquier web</div></div>
+  </div>
+</section>
+
+<!-- ── PRECIOS ── -->
+<section class="pricing" id="precios">
+  <div class="centered">
+    <span class="section-tag">Precios</span>
+    <h2 class="section-title">Paga solo por lo que usas</h2>
+    <p class="section-sub">Sin costos de instalación. Sin contratos a largo plazo. Cancela cuando quieras.</p>
+  </div>
+  <div class="pricing-grid">
+    <div class="pricing-card">
+      <div class="pricing-name">Starter</div>
+      <div class="pricing-price">$299<span>/mes</span></div>
+      <div class="pricing-desc">Ideal para tiendas pequeñas y startups</div>
+      <div class="pricing-feature">Hasta 1,000 transacciones/mes</div>
+      <div class="pricing-feature">3 widgets incluidos</div>
+      <div class="pricing-feature">Score de riesgo en tiempo real</div>
+      <div class="pricing-feature">Soporte por email</div>
+      <a href="#registro" class="pricing-btn pricing-btn-secondary">Comenzar →</a>
+    </div>
+    <div class="pricing-card featured">
+      <div class="pricing-badge">⭐ Más popular</div>
+      <div class="pricing-name">Growth</div>
+      <div class="pricing-price">$799<span>/mes</span></div>
+      <div class="pricing-desc">Para e-commerce y fintech en crecimiento</div>
+      <div class="pricing-feature">Hasta 10,000 transacciones/mes</div>
+      <div class="pricing-feature">Todo lo de Starter</div>
+      <div class="pricing-feature">Panel de alertas avanzado</div>
+      <div class="pricing-feature">Feedback de revisores</div>
+      <div class="pricing-feature">Soporte prioritario</div>
+      <a href="#registro" class="pricing-btn pricing-btn-primary">Comenzar →</a>
+    </div>
+    <div class="pricing-card">
+      <div class="pricing-name">Enterprise</div>
+      <div class="pricing-price" style="font-size:28px;padding-top:8px">Personalizado</div>
+      <div class="pricing-desc">Para bancos y grandes plataformas</div>
+      <div class="pricing-feature">Transacciones ilimitadas</div>
+      <div class="pricing-feature">Todo lo de Growth</div>
+      <div class="pricing-feature">Reentrenamiento del modelo</div>
+      <div class="pricing-feature">Integración dedicada</div>
+      <div class="pricing-feature">SLA garantizado</div>
+      <a href="#registro" class="pricing-btn pricing-btn-secondary">Contactar →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ── REGISTRO ── -->
+<section id="registro">
+  <div class="register-grid">
+
+    <!-- Beneficios -->
+    <div class="register-benefits">
+      <div>
+        <span class="section-tag">Empieza hoy</span>
+        <h2 class="section-title">Obtén tu API Key gratis</h2>
+        <p style="font-size:16px;color:var(--sub);line-height:1.7;margin-bottom:32px">Regístrate en segundos y empieza a proteger tus transacciones. Sin tarjeta de crédito.</p>
+      </div>
+      <div class="benefit">
+        <div class="benefit-icon">⚡</div>
+        <div>
+          <div class="benefit-title">Activo en 5 minutos</div>
+          <div class="benefit-desc">Desde que te registras hasta que tu primera transacción es analizada, menos de 5 minutos.</div>
+        </div>
+      </div>
+      <div class="benefit">
+        <div class="benefit-icon">🔒</div>
+        <div>
+          <div class="benefit-title">Sin cambiar tu sistema</div>
+          <div class="benefit-desc">SafeMarket se adapta a lo que ya tienes. No necesitas migrar nada ni rediseñar nada.</div>
+        </div>
+      </div>
+      <div class="benefit">
+        <div class="benefit-icon">🧠</div>
+        <div>
+          <div class="benefit-title">IA entrenada con datos reales</div>
+          <div class="benefit-desc">Modelo Random Forest entrenado con 100,000 transacciones del dataset PaySim1 con AUC-ROC de 99.63%.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Formulario -->
+    <div class="register-card">
+
+      <!-- Tabs -->
+      <div style="display:flex;margin-bottom:28px;border:1.5px solid var(--border);border-radius:12px;overflow:hidden">
+        <button id="tab-register" onclick="switchTab('register')"
+          style="flex:1;padding:12px;font-size:14px;font-weight:700;font-family:'Sora',sans-serif;border:none;cursor:pointer;background:var(--brand);color:#fff;transition:all .2s">
+          Crear cuenta
+        </button>
+        <button id="tab-login" onclick="switchTab('login')"
+          style="flex:1;padding:12px;font-size:14px;font-weight:700;font-family:'Sora',sans-serif;border:none;cursor:pointer;background:#fff;color:var(--sub);transition:all .2s">
+          Ya tengo cuenta
+        </button>
+      </div>
+
+      <!-- Formulario de registro -->
+      <div class="register-form" id="register-form">
+        <div class="register-title">Crear cuenta</div>
+        <div class="register-sub">Completa el formulario y obtén tu API Key al instante</div>
+
+        <div class="form-error" id="form-error"></div>
+
+        <div class="form-group">
+          <label class="form-label">Nombre de la empresa</label>
+          <input class="form-input" type="text" id="company" placeholder="Mi Empresa S.A.S" required/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Correo electrónico</label>
+          <input class="form-input" type="email" id="email" placeholder="tu@empresa.com" required/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Contraseña</label>
+          <input class="form-input" type="password" id="password" placeholder="Mín. 8 caracteres, 1 mayúscula y 1 número" required/>
+        </div>
+
+        <button class="form-btn" id="register-btn" onclick="handleRegister()">
+          Crear cuenta y obtener API Key →
+        </button>
+
+        <p style="text-align:center;margin-top:16px;font-size:13px;color:var(--sub)">
+          Al registrarte aceptas nuestros términos de uso.
+        </p>
+      </div>
+
+      <!-- Formulario de login -->
+      <div id="login-form" style="display:none">
+        <div class="register-title">Bienvenido de nuevo</div>
+        <div class="register-sub">Inicia sesión para ver tu API Key</div>
+
+        <div class="form-error" id="login-error"></div>
+
+        <div class="form-group">
+          <label class="form-label">Correo electrónico</label>
+          <input class="form-input" type="email" id="login-email" placeholder="tu@empresa.com"/>
+        </div>
+        <div class="form-group" style="margin-bottom:24px">
+          <label class="form-label">Contraseña</label>
+          <input class="form-input" type="password" id="login-password" placeholder="Tu contraseña"/>
+        </div>
+
+        <button class="form-btn" id="login-btn" onclick="handleLogin()">
+          Iniciar sesión →
+        </button>
+      </div>
+
+      <!-- Panel API Key (aparece después del registro) -->
+      <div class="apikey-panel" id="apikey-panel">
+        <div style="font-size:32px;margin-bottom:12px">🎉</div>
+        <div class="apikey-title">¡Tu API Key está lista!</div>
+        <div class="apikey-sub">Guárdala en un lugar seguro. No la compartas con nadie.</div>
+
+        <div class="apikey-box">
+          <span class="apikey-value" id="apikey-value">sm_live_xxxxxxxxxxxxxxxx</span>
+          <button class="apikey-copy" onclick="copyApiKey()">Copiar</button>
+        </div>
+
+        <div class="apikey-info">
+          ⚡ Pega este código en tu plataforma para activar SafeMarket:
+        </div>
+
+        <div class="apikey-snippet">
+          <div class="apikey-snippet-top">tu-plataforma.html</div>
+          <div class="apikey-snippet-code" id="apikey-snippet"></div>
+        </div>
+
+        <button class="form-btn" style="margin-top:20px" onclick="window.open('safemarket-demo.html','_blank')">
+          Ver demo en vivo →
+        </button>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="footer-logo">
+    <div class="nav-logo-icon">S</div>
+    <span style="font-family:'Sora',sans-serif;font-weight:700;font-size:18px;color:#fff">SafeMarket</span>
+  </div>
+  <p class="footer-text">© 2026 SafeMarket · Sistema de detección de fraude · Todos los derechos reservados</p>
+</footer>
+
+<script>
+  const API_URL = 'http://localhost:8000';
+
+  // ── Generar API Key local (para demo sin backend) ─────────────────────
+  function generateApiKey(email, company) {
+    const chars  = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    let key = 'sm_live_';
+    for (let i = 0; i < 24; i++) key += chars[Math.floor(Math.random() * chars.length)];
+    return key;
+  }
+
+  // ── Registro ──────────────────────────────────────────────────────────
+  async function handleRegister() {
+    const btn      = document.getElementById('register-btn');
+    const errorEl  = document.getElementById('form-error');
+    const company  = document.getElementById('company').value.trim();
+    const email    = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+
+    errorEl.classList.remove('visible');
+
+    if (!company || !email || !password) {
+      errorEl.textContent = 'Por favor completa todos los campos.';
+      errorEl.classList.add('visible');
+      return;
+    }
+    if (password.length < 8) {
+      errorEl.textContent = 'La contraseña debe tener al menos 8 caracteres.';
+      errorEl.classList.add('visible');
+      return;
+    }
+    if (!/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
+      errorEl.textContent = 'La contraseña debe tener al menos 1 mayúscula y 1 número.';
+      errorEl.classList.add('visible');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loader"></span> Creando cuenta...';
+
+    try {
+      // Intentar registrar en el backend real
+      const response = await fetch(`${API_URL}/auth/register`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ email, password, company }),
+      });
+
+      const apiKey = generateApiKey(email, company);
+      showApiKey(apiKey, company);
+
+    } catch (err) {
+      // Si el backend no está disponible, generar key de demo
+      const apiKey = generateApiKey(email, company);
+      showApiKey(apiKey, company);
+    }
+  }
+
+  // ── Mostrar panel API Key ─────────────────────────────────────────────
+  function showApiKey(apiKey, company) {
+    document.getElementById('register-form').classList.add('hidden');
+    document.getElementById('login-form').style.display = 'none';
+    document.getElementById('apikey-panel').classList.add('visible');
+    document.getElementById('apikey-value').textContent = apiKey;
+    document.getElementById('apikey-snippet').innerHTML =
+      `<span style="color:#475569">&lt;!-- Pega esto en tu plataforma --&gt;</span>\n` +
+      `<span style="color:#f472b6">&lt;script</span>\n` +
+      `  <span style="color:#93c5fd">src</span>=<span style="color:#86efac">"https://safemarket.co/sdk.js"</span>\n` +
+      `  <span style="color:#93c5fd">data-api-key</span>=<span style="color:#86efac">"${apiKey}"</span><span style="color:#f472b6">&gt;\n&lt;/script&gt;</span>`;
+  }
+
+  // ── Copiar API Key ────────────────────────────────────────────────────
+  function copyApiKey() {
+    const key = document.getElementById('apikey-value').textContent;
+    navigator.clipboard.writeText(key).then(() => {
+      const btn = document.querySelector('.apikey-copy');
+      btn.textContent = '✓ Copiado';
+      btn.style.background = '#16a34a';
+      setTimeout(() => { btn.textContent = 'Copiar'; btn.style.background = ''; }, 2000);
+    });
+  }
+
+  // ── Cambiar entre tabs ────────────────────────────────────────────────
+  function switchTab(tab) {
+    const isRegister = tab === 'register';
+    document.getElementById('register-form').style.display = isRegister ? 'block' : 'none';
+    document.getElementById('login-form').style.display    = isRegister ? 'none'  : 'block';
+    document.getElementById('apikey-panel').classList.remove('visible');
+    document.getElementById('tab-register').style.background = isRegister ? 'var(--brand)' : '#fff';
+    document.getElementById('tab-register').style.color      = isRegister ? '#fff' : 'var(--sub)';
+    document.getElementById('tab-login').style.background    = isRegister ? '#fff' : 'var(--brand)';
+    document.getElementById('tab-login').style.color         = isRegister ? 'var(--sub)' : '#fff';
+  }
+
+  // ── Login con control de roles ───────────────────────────────────────
+  let SM_TOKEN = '';
+
+  async function handleLogin() {
+    const btn      = document.getElementById('login-btn');
+    const errorEl  = document.getElementById('login-error');
+    const email    = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+
+    errorEl.classList.remove('visible');
+    if (!email || !password) {
+      errorEl.textContent = 'Por favor completa todos los campos.';
+      errorEl.classList.add('visible');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loader"></span> Verificando...';
+
+    try {
+      const formData = new URLSearchParams();
+      formData.append('username', email);
+      formData.append('password', password);
+
+      const res  = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Credenciales incorrectas');
+
+      SM_TOKEN = data.access_token;
+
+      // Obtener perfil y detectar rol
+      const profileRes = await fetch(`${API_URL}/users/profile`, { headers: { Authorization: `Bearer ${SM_TOKEN}` } });
+      const profile    = await profileRes.json();
+      const role       = profile.role;
+
+      if (['ADMIN', 'ANALYST'].includes(role)) {
+        // → Cerrar modal y mostrar dashboard administrativo
+        closeLoginModal();
+        openAdminDashboard(email, role);
+      } else {
+        // → Mostrar API Key (VIEWER, REVIEWER, cliente)
+        const apiKey = generateApiKey(email, '');
+        showApiKey(apiKey, email);
+      }
+
+    } catch (err) {
+      errorEl.textContent = err.message;
+      errorEl.classList.add('visible');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = 'Iniciar sesión →';
+    }
+  }
+
+  // ── Modal login helpers ───────────────────────────────────────────────
+  function openLoginModal()  { document.getElementById('login-modal').classList.add('open'); }
+  function closeLoginModal() { document.getElementById('login-modal').classList.remove('open'); }
+  function closeOnOverlay(e) { if (e.target === e.currentTarget) closeLoginModal(); }
+
+  // ── doLogin — login del modal del navbar con control de roles ──────────
+  async function doLogin() {
+    const btn   = document.getElementById('m-btn');
+    const errEl = document.getElementById('modal-error');
+    const email = document.getElementById('m-email').value.trim();
+    const pass  = document.getElementById('m-password').value;
+
+    errEl.classList.remove('visible');
+    if (!email || !pass) {
+      errEl.textContent = 'Completa todos los campos.';
+      errEl.classList.add('visible');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="m-loader"></span> Verificando...';
+
+    try {
+      // 1. Login
+      const form = new URLSearchParams();
+      form.append('username', email);
+      form.append('password', pass);
+      const res  = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: form,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Credenciales incorrectas');
+      SM_TOKEN = data.access_token;
+
+      // 2. Obtener perfil y detectar rol
+      const profileRes = await fetch(`${API_URL}/users/profile`, {
+        headers: { Authorization: `Bearer ${SM_TOKEN}` }
+      });
+      const profile = await profileRes.json();
+      const role    = profile.role;
+
+      // 3. Redirigir según rol
+      closeLoginModal();
+      document.getElementById('m-password').value = '';
+
+      if (['ADMIN', 'ANALYST'].includes(role)) {
+        // → Dashboard administrativo
+        // Ocultar toda la landing page
+        document.body.style.overflow = 'hidden';
+        document.querySelectorAll('body > *:not(#admin-panel)').forEach(el => {
+          if (el.id !== 'admin-panel') el.style.display = 'none';
+        });
+        document.getElementById('admin-panel').style.display = 'flex';
+        document.getElementById('admin-av').textContent    = email.slice(0, 2).toUpperCase();
+        document.getElementById('admin-email').textContent = email;
+        document.getElementById('admin-role').textContent  = role;
+        loadAdminOverview();
+      } else {
+        // → Panel con API Key (VIEWER, REVIEWER, cliente)
+        const apiKey = generateApiKey(email, profile.company_id || '');
+        document.getElementById('client-name').textContent = email;
+        document.getElementById('client-apikey').textContent = apiKey;
+        document.getElementById('client-snippet').innerHTML =
+          `<span style="color:#475569">&lt;!-- Pega esto antes de &lt;/body&gt; --&gt;</span>\n` +
+          `<span style="color:#f472b6">&lt;script</span>\n` +
+          `  <span style="color:#93c5fd">src</span>=<span style="color:#86efac">"https://safemarket.co/sdk.js"</span>\n` +
+          `  <span style="color:#93c5fd">data-api-key</span>=<span style="color:#86efac">"${apiKey}"</span>` +
+          `<span style="color:#f472b6">&gt;\n&lt;/script&gt;</span>`;
+        document.getElementById('client-panel').classList.add('open');
+      }
+
+    } catch (err) {
+      errEl.textContent = err.message;
+      errEl.classList.add('visible');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = 'Ingresar →';
+    }
+  }
+
+  // ── Cerrar sesión ─────────────────────────────────────────────────────
+  function doLogout() {
+    SM_TOKEN = '';
+    // Ocultar paneles
+    document.getElementById('client-panel').classList.remove('open');
+    document.getElementById('admin-panel').style.display = 'none';
+    // Restaurar toda la landing page
+    document.body.style.overflow = '';
+    document.querySelectorAll('body > *').forEach(el => {
+      if (el.id !== 'admin-panel' && el.id !== 'client-panel') el.style.display = '';
+    });
+    document.getElementById('login-modal').classList.remove('open');
+    document.getElementById('apikey-panel').classList.remove('visible');
+    document.getElementById('register-form').classList.remove('hidden');
+    document.getElementById('login-form').style.display = 'none';
+    switchTab('register');
+  }
+
+  // ── Abrir dashboard admin ─────────────────────────────────────────────
+  function openAdminDashboard(email, role) {
+    // Ocultar toda la landing para que el dashboard quede solo
+    document.querySelectorAll('body > *').forEach(el => {
+      if (el.id !== 'admin-panel') el.style.display = 'none';
+    });
+    document.body.style.overflow = 'hidden';
+    document.getElementById('admin-panel').style.display = 'flex';
+    document.getElementById('admin-av').textContent    = email.slice(0,2).toUpperCase();
+    document.getElementById('admin-email').textContent = email;
+    document.getElementById('admin-role').textContent  = role;
+    loadAdminOverview();
+  }
+
+  // ── API helper admin ──────────────────────────────────────────────────
+  async function adminFetch(path) {
+    const r = await fetch(`${API_URL}${path}`, { headers: { Authorization: `Bearer ${SM_TOKEN}` } });
+    if (!r.ok) throw new Error(`Error ${r.status}`);
+    return r.json();
+  }
+
+  function sbadge(s) {
+    const m = { APPROVED:'#dcfce7:#16a34a', DECLINED:'#fee2e2:#dc2626', REVIEW:'#fef9c3:#ca8a04', PENDING:'#eff6ff:#2563eb' };
+    const [bg, color] = (m[s] || '#f1f5f9:#64748b').split(':');
+    return `<span style="background:${bg};color:${color};font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px">${s||'—'}</span>`;
+  }
+  function rbadge(r) {
+    const m = { LOW:'#dcfce7:#16a34a', MEDIUM:'#fef9c3:#ca8a04', HIGH:'#fee2e2:#dc2626' };
+    const [bg, color] = (m[r] || '#f1f5f9:#64748b').split(':');
+    return `<span style="background:${bg};color:${color};font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px">${r||'—'}</span>`;
+  }
+
+  // ── Secciones del admin ───────────────────────────────────────────────
+  let adminSection = 'overview';
+  let adminPage = 0;
+  const PS = 50;
+  let chartStatus = null, chartRisk = null;
+
+  function adminGoTo(s) {
+    document.querySelectorAll('.admin-page').forEach(p => p.style.display = 'none');
+    document.querySelectorAll('.admin-nav-item').forEach(n => {
+      n.style.background = 'transparent'; n.style.color = 'rgba(255,255,255,.55)';
+    });
+    document.getElementById(`admin-page-${s}`).style.display = 'block';
+    const ni = document.getElementById(`admin-nav-${s}`);
+    ni.style.background = 'rgba(37,99,235,.25)'; ni.style.color = '#fff';
+    document.getElementById('admin-topbar-title').textContent =
+      { overview:'Resumen Global', transactions:'Transacciones', alertas:'Alertas', empresas:'Empresas Clientes' }[s];
+    adminSection = s;
+    if (s === 'overview')     loadAdminOverview();
+    if (s === 'transactions') loadAdminTx(0);
+    if (s === 'alertas')      loadAdminAlertas();
+    if (s === 'empresas')     loadAdminEmpresas();
+  }
+
+  async function loadAdminOverview() {
+    try {
+      const [stats, txData, empData] = await Promise.all([
+        adminFetch('/admin/stats'),
+        adminFetch('/admin/transactions?limit=8'),
+        adminFetch('/admin/empresas'),
+      ]);
+      // KPIs
+      const kpis = [
+        { ic:'💰', val:`$${Number(stats.monto_total).toLocaleString('es',{maximumFractionDigits:0})}`, lbl:'Volumen total', sub:`${stats.total_transacciones} transacciones`, bdr:'#2563eb' },
+        { ic:'🚫', val:stats.bloqueadas,         lbl:'Bloqueadas',        sub:'DECLINED', bdr:'#ef4444' },
+        { ic:'⚠️', val:stats.alertas_abiertas,   lbl:'Alertas abiertas',  sub:'Requieren atención', bdr:'#f59e0b' },
+        { ic:'🏢', val:stats.empresas_activas,   lbl:'Empresas clientes', sub:`${stats.usuarios_activos} usuarios`, bdr:'#0d9488' },
+        { ic:'🔍', val:stats.fraudes_detectados, lbl:'Fraudes detectados', sub:`Tasa: ${stats.tasa_fraude_pct}%`, bdr:'#ef4444' },
+        { ic:'🔄', val:stats.en_revision,        lbl:'En revisión',       sub:'Pendientes de decisión', bdr:'#f59e0b' },
+        { ic:'🛡️', val:`$${(stats.monto_protegido/1000).toFixed(1)}K`, lbl:'Monto protegido', sub:'95% del volumen', bdr:'#0d9488' },
+        { ic:'👥', val:stats.usuarios_activos,   lbl:'Usuarios activos',  sub:'Total plataforma', bdr:'#7c3aed' },
+      ];
+      document.getElementById('admin-kpis').innerHTML = kpis.map(k =>
+        `<div style="background:#fff;border-radius:14px;padding:18px;border:1px solid #e2e8f0;border-top:3px solid ${k.bdr}">
+          <div style="font-size:20px;margin-bottom:8px">${k.ic}</div>
+          <div style="font-family:Sora,sans-serif;font-size:24px;font-weight:800;color:#1a3c6e;line-height:1;margin-bottom:3px">${k.val}</div>
+          <div style="font-size:12px;color:#64748b">${k.lbl}</div>
+          <div style="font-size:11px;color:#94a3b8;margin-top:4px">${k.sub}</div>
+        </div>`).join('');
+
+      // Alertas badge
+      if (stats.alertas_abiertas > 0) {
+        document.getElementById('admin-alert-badge').style.display = 'flex';
+        document.getElementById('admin-alert-badge').textContent = `🔴 ${stats.alertas_abiertas} alertas abiertas`;
+        document.getElementById('admin-nbadge').textContent = stats.alertas_abiertas;
+      }
+
+      // Gráficas
+      renderAdminCharts(stats);
+
+      // Transacciones recientes
+      const txs = txData.transacciones || [];
+      document.getElementById('admin-recent-tx').innerHTML = !txs.length
+        ? '<tr><td colspan="5" style="text-align:center;padding:20px;color:#94a3b8">Sin datos</td></tr>'
+        : txs.map(tx => `<tr style="border-bottom:1px solid #f1f5f9">
+            <td style="padding:10px 14px;font-weight:600;color:#1a3c6e">${tx.empresa}</td>
+            <td style="padding:10px 14px;font-weight:700">$${Number(tx.monto).toLocaleString('es',{maximumFractionDigits:0})}</td>
+            <td style="padding:10px 14px"><span style="background:#f1f5f9;color:#64748b;font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px">${tx.tipo}</span></td>
+            <td style="padding:10px 14px">${sbadge(tx.estado)}</td>
+            <td style="padding:10px 14px">${rbadge(tx.nivel_riesgo)}</td>
+          </tr>`).join('');
+
+      // Ranking empresas
+      const max = empData[0]?.monto_total || 1;
+      document.getElementById('admin-ranking').innerHTML = empData.slice(0,5).map((e,i) => `
+        <div style="margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px">
+            <span style="font-weight:600;color:#1a3c6e">${i+1}. ${e.empresa}</span>
+            <span style="font-weight:700">$${Number(e.monto_total).toLocaleString('es',{maximumFractionDigits:0})}</span>
+          </div>
+          <div style="height:7px;background:#f1f5f9;border-radius:4px;overflow:hidden">
+            <div style="height:100%;width:${(e.monto_total/max*100).toFixed(1)}%;background:linear-gradient(90deg,#2563eb,#0d9488);border-radius:4px"></div>
+          </div>
+          <div style="font-size:11px;color:#94a3b8;margin-top:3px">${e.total_tx} transacciones · ${e.fraudes} fraudes</div>
+        </div>`).join('');
+
+    } catch(err) {
+      document.getElementById('admin-kpis').innerHTML = `<div style="text-align:center;padding:20px;color:#ef4444">⚠️ ${err.message}</div>`;
+    }
+  }
+
+  function renderAdminCharts(stats) {
+    const ctxS = document.getElementById('admin-chart-status').getContext('2d');
+    if (chartStatus) chartStatus.destroy();
+    chartStatus = new Chart(ctxS, {
+      type: 'doughnut',
+      data: { labels:['Aprobadas','Bloqueadas','En Revisión'],
+        datasets:[{ data:[stats.total_transacciones-stats.bloqueadas-stats.en_revision, stats.bloqueadas, stats.en_revision],
+          backgroundColor:['#0d9488','#ef4444','#f59e0b'], borderWidth:0, hoverOffset:6 }] },
+      options:{ plugins:{ legend:{ position:'bottom', labels:{ font:{size:11}, padding:14 } } }, cutout:'65%', maintainAspectRatio:true }
+    });
+    const ctxR = document.getElementById('admin-chart-risk').getContext('2d');
+    if (chartRisk) chartRisk.destroy();
+    chartRisk = new Chart(ctxR, {
+      type: 'doughnut',
+      data: { labels:['Bajo riesgo','Riesgo medio','Alto riesgo'],
+        datasets:[{ data:[stats.risk_distribution?.bajo||0, stats.risk_distribution?.medio||0, stats.risk_distribution?.alto||0],
+          backgroundColor:['#0d9488','#f59e0b','#ef4444'], borderWidth:0, hoverOffset:6 }] },
+      options:{ plugins:{ legend:{ position:'bottom', labels:{ font:{size:11}, padding:14 } } }, cutout:'65%', maintainAspectRatio:true }
+    });
+  }
+
+  async function loadAdminTx(skip) {
+    adminPage = skip;
+    const emp = document.getElementById('af-emp').value;
+    const sta = document.getElementById('af-sta').value;
+    const ris = document.getElementById('af-ris').value;
+    const fra = document.getElementById('af-fra').value;
+    let url = `/admin/transactions?skip=${skip}&limit=${PS}`;
+    if (emp) url += `&empresa=${encodeURIComponent(emp)}`;
+    if (sta) url += `&status=${sta}`;
+    if (ris) url += `&risk_level=${ris}`;
+    if (fra) url += `&is_fraud=${fra}`;
+    document.getElementById('admin-tx-body').innerHTML = `<tr><td colspan="10" style="text-align:center;padding:20px;color:#94a3b8">Cargando...</td></tr>`;
+    try {
+      const data = await adminFetch(url);
+      const txs = data.transacciones || [];
+      const total = data.total || 0;
+      document.getElementById('admin-pagi-info').textContent = `${skip+1}–${Math.min(skip+PS,total)} de ${total}`;
+      document.getElementById('admin-btn-prev').disabled = skip === 0;
+      document.getElementById('admin-btn-next').disabled = skip+PS >= total;
+      document.getElementById('admin-tx-body').innerHTML = !txs.length
+        ? `<tr><td colspan="10" style="text-align:center;padding:24px;color:#94a3b8">Sin resultados</td></tr>`
+        : txs.map(tx => `<tr style="border-bottom:1px solid #f1f5f9">
+            <td style="padding:10px 14px;font-family:monospace;font-size:12px;color:#1a3c6e">${tx.transaction_id.slice(0,8).toUpperCase()}...</td>
+            <td style="padding:10px 14px"><div style="font-weight:600;color:#1a3c6e">${tx.empresa}</div><div style="font-size:11px;color:#94a3b8">${tx.empresa_industria||''}</div></td>
+            <td style="padding:10px 14px;font-size:12px;color:#64748b">${tx.usuario_email}</td>
+            <td style="padding:10px 14px;font-weight:700">$${Number(tx.monto).toLocaleString('es',{minimumFractionDigits:2,maximumFractionDigits:2})} <span style="font-size:10px;color:#94a3b8">${tx.moneda}</span></td>
+            <td style="padding:10px 14px"><span style="background:#f1f5f9;color:#64748b;font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px">${tx.tipo}</span></td>
+            <td style="padding:10px 14px">${sbadge(tx.estado)}</td>
+            <td style="padding:10px 14px">${rbadge(tx.nivel_riesgo)}</td>
+            <td style="padding:10px 14px;font-weight:700">${tx.score_riesgo!==null?(tx.score_riesgo*100).toFixed(0)+'%':'—'}</td>
+            <td style="padding:10px 14px">${tx.es_fraude?'<span style="background:#fee2e2;color:#dc2626;font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px">Fraude</span>':'<span style="background:#dcfce7;color:#16a34a;font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px">Legítima</span>'}</td>
+            <td style="padding:10px 14px;font-size:12px;color:#64748b">${tx.fecha?new Date(tx.fecha).toLocaleDateString('es-CO',{day:'2-digit',month:'short',year:'numeric'}):'—'}</td>
+          </tr>`).join('');
+    } catch(err) {
+      document.getElementById('admin-tx-body').innerHTML = `<tr><td colspan="10" style="text-align:center;padding:20px;color:#ef4444">⚠️ ${err.message}</td></tr>`;
+    }
+  }
+
+  function adminChangePg(d) { loadAdminTx(adminPage + d*PS); }
+  function adminClearF() { ['af-emp','af-sta','af-ris','af-fra'].forEach(id => document.getElementById(id).value=''); loadAdminTx(0); }
+
+  async function loadAdminAlertas() {
+    const st = document.getElementById('af-alst').value;
+    document.getElementById('admin-alertas-list').innerHTML = '<div style="text-align:center;padding:32px;color:#94a3b8">Cargando...</div>';
+    try {
+      const alertas = await adminFetch(`/admin/alertas?status=${st}&limit=100`);
+      const icons = { CRITICAL:'🚨', HIGH:'🔴', MEDIUM:'⚠️', LOW:'🟡' };
+      document.getElementById('admin-alertas-list').innerHTML = !alertas.length
+        ? `<div style="text-align:center;padding:32px;color:#94a3b8">✅ No hay alertas ${st.toLowerCase()}</div>`
+        : alertas.map(a => `
+          <div style="padding:14px 20px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:12px">
+            <div style="width:38px;height:38px;border-radius:10px;background:${a.nivel==='CRITICAL'||a.nivel==='HIGH'?'#fee2e2':a.nivel==='MEDIUM'?'#fef9c3':'#dcfce7'};display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">${icons[a.nivel]||'⚠️'}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13px;font-weight:600;margin-bottom:3px">${a.empresa} — ${a.tipo_tx} · $${Number(a.monto).toLocaleString('es',{maximumFractionDigits:0})}</div>
+              <div style="font-size:12px;color:#64748b">${a.usuario_email} · ${rbadge(a.riesgo)}</div>
+              <div style="font-size:11px;color:#94a3b8;margin-top:3px">${a.fecha?new Date(a.fecha).toLocaleString('es-CO'):'—'}</div>
+            </div>
+            <div style="font-family:Sora,sans-serif;font-size:18px;font-weight:800;color:${a.nivel==='CRITICAL'||a.nivel==='HIGH'?'#dc2626':a.nivel==='MEDIUM'?'#ca8a04':'#16a34a'}">${a.score!==null?(a.score*100).toFixed(0)+'%':'—'}</div>
+          </div>`).join('');
+    } catch(err) {
+      document.getElementById('admin-alertas-list').innerHTML = `<div style="text-align:center;padding:24px;color:#ef4444">⚠️ ${err.message}</div>`;
+    }
+  }
+
+  async function loadAdminEmpresas() {
+    document.getElementById('admin-empresas-grid').innerHTML = '<div style="text-align:center;padding:32px;color:#94a3b8">Cargando...</div>';
+    try {
+      const empresas = await adminFetch('/admin/empresas');
+      document.getElementById('admin-empresas-grid').innerHTML = !empresas.length
+        ? '<div style="text-align:center;padding:32px;color:#94a3b8">Sin empresas registradas</div>'
+        : empresas.map(e => `
+          <div style="background:#fff;border-radius:14px;padding:20px;border:1px solid #e2e8f0;transition:all .2s" onmouseenter="this.style.borderColor='#2563eb';this.style.transform='translateY(-2px)'" onmouseleave="this.style.borderColor='#e2e8f0';this.style.transform='none'">
+            <div style="font-family:Sora,sans-serif;font-weight:700;font-size:15px;color:#1a3c6e;margin-bottom:4px">${e.empresa}</div>
+            <div style="font-size:12px;color:#94a3b8;margin-bottom:14px">${e.industria||'Sin industria'} · ${e.pais||'—'}</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div style="background:#f4f7fb;border-radius:8px;padding:10px"><div style="font-family:Sora,sans-serif;font-weight:700;font-size:16px;color:#1a3c6e">$${(e.monto_total/1000).toFixed(1)}K</div><div style="font-size:11px;color:#64748b;margin-top:2px">Volumen</div></div>
+              <div style="background:#f4f7fb;border-radius:8px;padding:10px"><div style="font-family:Sora,sans-serif;font-weight:700;font-size:16px;color:#1a3c6e">${e.total_tx}</div><div style="font-size:11px;color:#64748b;margin-top:2px">Transacciones</div></div>
+              <div style="background:#f4f7fb;border-radius:8px;padding:10px"><div style="font-family:Sora,sans-serif;font-weight:700;font-size:16px;color:#ef4444">${e.fraudes}</div><div style="font-size:11px;color:#64748b;margin-top:2px">Fraudes</div></div>
+              <div style="background:#f4f7fb;border-radius:8px;padding:10px"><div style="font-family:Sora,sans-serif;font-weight:700;font-size:16px;color:#f59e0b">${e.tasa_fraude_pct}%</div><div style="font-size:11px;color:#64748b;margin-top:2px">Tasa fraude</div></div>
+            </div>
+            <div style="height:5px;background:#f1f5f9;border-radius:3px;margin-top:14px;overflow:hidden"><div style="height:100%;width:${Math.min(e.tasa_fraude_pct*10,100)}%;background:#ef4444;border-radius:3px"></div></div>
+          </div>`).join('');
+    } catch(err) {
+      document.getElementById('admin-empresas-grid').innerHTML = `<div style="text-align:center;padding:24px;color:#ef4444">⚠️ ${err.message}</div>`;
+    }
+  }
+</script>
+
+
+<!-- ── MODAL LOGIN ── -->
+<div class="modal-overlay" id="login-modal" onclick="closeOnOverlay(event)">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeLoginModal()">✕</button>
+    <div class="modal-logo">
+      <div style="width:36px;height:36px;background:linear-gradient(135deg,#2563eb,#0d9488);border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:Sora,sans-serif;font-weight:800;color:#fff;font-size:16px">S</div>
+      <span style="font-family:Sora,sans-serif;font-weight:700;font-size:18px;color:#1a3c6e">SafeMarket</span>
+    </div>
+    <div class="modal-title">Iniciar sesión</div>
+    <div class="modal-sub">El sistema detecta tu rol y te redirige automáticamente</div>
+    <div class="modal-error" id="modal-error"></div>
+    <label class="m-label">Correo electrónico</label>
+    <input class="m-input" type="email" id="m-email" placeholder="tu@empresa.com"/>
+    <label class="m-label">Contraseña</label>
+    <input class="m-input" type="password" id="m-password" placeholder="Tu contraseña" style="margin-bottom:20px"/>
+    <button class="m-btn" id="m-btn" onclick="doLogin()">Ingresar →</button>
+  </div>
+</div>
+
+<!-- ── PANEL CLIENTE ── -->
+<div class="client-panel" id="client-panel">
+  <div class="client-card">
+    <div class="client-header">
+      <div class="client-logo">
+        <div class="client-logo-icon">S</div>
+        <span class="client-logo-text">SafeMarket</span>
+      </div>
+      <button class="client-logout" onclick="doLogout()">⏻ Cerrar sesión</button>
+    </div>
+    <div class="client-welcome">🎉 Bienvenido, <span id="client-name">usuario</span></div>
+    <div class="client-sub">Tu API Key está lista. Intégrala en tu plataforma con una línea de código.</div>
+
+    <div class="apikey-box">
+      <span class="apikey-val" id="client-apikey">sm_live_xxxxxxxxxxxxxxxx</span>
+      <button class="apikey-copy-btn" onclick="copyKey()">Copiar</button>
+    </div>
+
+    <div class="apikey-info">⚡ Pega este script en tu plataforma antes de &lt;/body&gt;:</div>
+
+    <div class="snippet-box">
+      <div class="snippet-top">tu-plataforma.html</div>
+      <div class="snippet-code" id="client-snippet"></div>
+    </div>
+
+    <button class="client-demo-btn" onclick="window.open('safemarket-demo.html','_blank')">
+      Ver demo de los widgets →
+    </button>
+  </div>
+</div>
+
+
+<!-- ── PANEL ADMIN (se muestra sobre la landing cuando el rol es ADMIN/ANALYST) ── -->
+<div id="admin-panel" style="display:none;position:fixed;inset:0;z-index:9999;flex-direction:row;font-family:'DM Sans',sans-serif">
+
+  <!-- Sidebar -->
+  <aside style="width:240px;background:#0f1f3d;color:#fff;display:flex;flex-direction:column;flex-shrink:0;height:100vh;position:sticky;top:0">
+    <div style="padding:22px 20px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px">
+      <div style="width:34px;height:34px;background:linear-gradient(135deg,#2563eb,#0d9488);border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:Sora,sans-serif;font-weight:800;font-size:15px;color:#fff">S</div>
+      <span style="font-family:Sora,sans-serif;font-weight:700;font-size:16px">SafeMarket <span style="background:linear-gradient(135deg,#2563eb,#7c3aed);font-size:9px;font-weight:700;padding:2px 7px;border-radius:6px;margin-left:2px">ADMIN</span></span>
+    </div>
+    <div style="padding:18px 12px 6px;font-size:10px;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:1.5px;text-transform:uppercase">Principal</div>
+    <button id="admin-nav-overview"     class="admin-nav-item" onclick="adminGoTo('overview')"     style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;margin:2px 8px;cursor:pointer;font-size:14px;font-weight:500;color:rgba(255,255,255,.55);transition:all .18s;border:none;width:calc(100% - 16px);text-align:left;font-family:'DM Sans',sans-serif;background:rgba(37,99,235,.25);color:#fff">📊 Resumen global</button>
+    <button id="admin-nav-transactions" class="admin-nav-item" onclick="adminGoTo('transactions')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;margin:2px 8px;cursor:pointer;font-size:14px;font-weight:500;color:rgba(255,255,255,.55);transition:all .18s;border:none;width:calc(100% - 16px);text-align:left;font-family:'DM Sans',sans-serif;background:transparent">💳 Transacciones</button>
+    <button id="admin-nav-alertas"      class="admin-nav-item" onclick="adminGoTo('alertas')"      style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;margin:2px 8px;cursor:pointer;font-size:14px;font-weight:500;color:rgba(255,255,255,.55);transition:all .18s;border:none;width:calc(100% - 16px);text-align:left;font-family:'DM Sans',sans-serif;background:transparent">🚨 Alertas <span id="admin-nbadge" style="margin-left:auto;background:#ef4444;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px">0</span></button>
+    <div style="padding:18px 12px 6px;font-size:10px;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:1.5px;text-transform:uppercase">Clientes</div>
+    <button id="admin-nav-empresas"     class="admin-nav-item" onclick="adminGoTo('empresas')"     style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;margin:2px 8px;cursor:pointer;font-size:14px;font-weight:500;color:rgba(255,255,255,.55);transition:all .18s;border:none;width:calc(100% - 16px);text-align:left;font-family:'DM Sans',sans-serif;background:transparent">🏢 Empresas</button>
+    <div style="margin-top:auto;padding:14px;border-top:1px solid rgba(255,255,255,.08)">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div id="admin-av" style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#2563eb,#0d9488);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">A</div>
+        <div style="flex:1;min-width:0">
+          <div id="admin-email" style="font-size:12px;color:rgba(255,255,255,.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">—</div>
+          <div id="admin-role"  style="font-size:10px;color:rgba(255,255,255,.35)">—</div>
+        </div>
+        <button onclick="doLogout()" title="Cerrar sesión" style="background:none;border:none;cursor:pointer;color:rgba(255,255,255,.4);font-size:18px;padding:4px;transition:color .2s" onmouseenter="this.style.color='#ef4444'" onmouseleave="this.style.color='rgba(255,255,255,.4)'">⏻</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div style="flex:1;display:flex;flex-direction:column;overflow:auto">
+
+    <!-- Topbar -->
+    <div style="background:#fff;border-bottom:1px solid #e2e8f0;padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;box-shadow:0 1px 4px rgba(0,0,0,.04);flex-shrink:0">
+      <span id="admin-topbar-title" style="font-family:Sora,sans-serif;font-weight:700;font-size:16px;color:#1a3c6e">Resumen Global</span>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div id="admin-alert-badge" style="display:none;background:#ef4444;color:#fff;font-size:12px;font-weight:700;padding:5px 14px;border-radius:20px;align-items:center;gap:6px">0 alertas</div>
+        <button onclick="loadAdminOverview()" style="background:#f4f7fb;border:1px solid #e2e8f0;color:#64748b;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">↻ Actualizar</button>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div style="padding:24px;flex:1">
+
+      <!-- RESUMEN -->
+      <div id="admin-page-overview" class="admin-page">
+        <div id="admin-kpis" style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px">
+          <div style="text-align:center;padding:32px;color:#94a3b8;grid-column:1/-1">Cargando KPIs...</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px">
+          <div style="background:#fff;border-radius:16px;padding:22px;border:1px solid #e2e8f0">
+            <div style="font-family:Sora,sans-serif;font-weight:700;font-size:15px;color:#1a3c6e;margin-bottom:3px">Transacciones por estado</div>
+            <div style="font-size:12px;color:#64748b;margin-bottom:16px">Distribución global APPROVE / DECLINE / REVIEW</div>
+            <canvas id="admin-chart-status" height="180"></canvas>
+          </div>
+          <div style="background:#fff;border-radius:16px;padding:22px;border:1px solid #e2e8f0">
+            <div style="font-family:Sora,sans-serif;font-weight:700;font-size:15px;color:#1a3c6e;margin-bottom:3px">Distribución de riesgo</div>
+            <div style="font-size:12px;color:#64748b;margin-bottom:16px">Porcentaje por nivel LOW / MEDIUM / HIGH</div>
+            <canvas id="admin-chart-risk" height="180"></canvas>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+          <div style="background:#fff;border-radius:16px;border:1px solid #e2e8f0;overflow:hidden">
+            <div style="padding:16px 20px;border-bottom:1px solid #e2e8f0;font-family:Sora,sans-serif;font-weight:700;font-size:14px;color:#1a3c6e">Transacciones recientes</div>
+            <table style="width:100%;border-collapse:collapse;font-size:13px">
+              <thead><tr style="background:#f4f7fb"><th style="padding:9px 14px;text-align:left;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px">Empresa</th><th style="padding:9px 14px;text-align:left;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase">Monto</th><th style="padding:9px 14px;text-align:left;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase">Tipo</th><th style="padding:9px 14px;text-align:left;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase">Estado</th><th style="padding:9px 14px;text-align:left;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase">Riesgo</th></tr></thead>
+              <tbody id="admin-recent-tx"></tbody>
+            </table>
+          </div>
+          <div style="background:#fff;border-radius:16px;padding:20px;border:1px solid #e2e8f0">
+            <div style="font-family:Sora,sans-serif;font-weight:700;font-size:14px;color:#1a3c6e;margin-bottom:16px">Top empresas por volumen</div>
+            <div id="admin-ranking">Cargando...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TRANSACCIONES -->
+      <div id="admin-page-transactions" class="admin-page" style="display:none">
+        <div style="background:#fff;border-radius:16px;border:1px solid #e2e8f0;overflow:hidden">
+          <div style="padding:18px 20px;border-bottom:1px solid #e2e8f0">
+            <div style="font-family:Sora,sans-serif;font-weight:700;font-size:15px;color:#1a3c6e;margin-bottom:14px">Todas las transacciones</div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <input id="af-emp" placeholder="🔍 Empresa..." style="padding:8px 13px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;font-family:'DM Sans',sans-serif;width:180px"/>
+              <select id="af-sta" style="padding:8px 13px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;font-family:'DM Sans',sans-serif"><option value="">Todos los estados</option><option>APPROVED</option><option>DECLINED</option><option>REVIEW</option></select>
+              <select id="af-ris" style="padding:8px 13px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;font-family:'DM Sans',sans-serif"><option value="">Todos los riesgos</option><option>LOW</option><option>MEDIUM</option><option>HIGH</option></select>
+              <select id="af-fra" style="padding:8px 13px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;font-family:'DM Sans',sans-serif"><option value="">Fraude: todos</option><option value="true">Solo fraudes</option><option value="false">Sin fraude</option></select>
+              <button onclick="loadAdminTx(0)" style="padding:8px 18px;background:#1a3c6e;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">Filtrar</button>
+              <button onclick="adminClearF()" style="padding:8px 14px;background:#f4f7fb;color:#64748b;border:1px solid #e2e8f0;border-radius:10px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif">✕ Limpiar</button>
+            </div>
+          </div>
+          <div style="overflow-x:auto">
+            <table style="width:100%;border-collapse:collapse;font-size:13px">
+              <thead><tr style="background:#f4f7fb;border-bottom:1px solid #e2e8f0">
+                <th style="padding:9px 14px;text-align:left;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;white-space:nowrap">ID</th>
+                <th style="padding:9px 14px;text-align:left;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase">Empresa</th>
+                <th style="padding:9px 14px;text-align:left;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase">Usuario</th>
+                <th style="padding:9px 14px;text-align:left;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase">Monto</th>
+                <th style="padding:9px 14px;text-align:left;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase">Tipo</th>
+                <th style="padding:9px 14px;text-align:left;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase">Estado</th>
+                <th style="padding:9px 14px;text-align:left;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase">Riesgo</th>
+                <th style="padding:9px 14px;text-align:left;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase">Score</th>
+                <th style="padding:9px 14px;text-align:left;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase">Fraude</th>
+                <th style="padding:9px 14px;text-align:left;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase">Fecha</th>
+              </tr></thead>
+              <tbody id="admin-tx-body"></tbody>
+            </table>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-top:1px solid #e2e8f0">
+            <span id="admin-pagi-info" style="font-size:13px;color:#64748b">—</span>
+            <div style="display:flex;gap:8px">
+              <button id="admin-btn-prev" onclick="adminChangePg(-1)" disabled style="padding:7px 14px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;cursor:pointer;background:#fff;font-family:'DM Sans',sans-serif">← Anterior</button>
+              <button id="admin-btn-next" onclick="adminChangePg(1)"         style="padding:7px 14px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;cursor:pointer;background:#fff;font-family:'DM Sans',sans-serif">Siguiente →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ALERTAS -->
+      <div id="admin-page-alertas" class="admin-page" style="display:none">
+        <div style="background:#fff;border-radius:16px;border:1px solid #e2e8f0;overflow:hidden">
+          <div style="padding:18px 20px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center">
+            <div><div style="font-family:Sora,sans-serif;font-weight:700;font-size:15px;color:#1a3c6e">Alertas de fraude</div><div style="font-size:12px;color:#64748b;margin-top:2px">Todas las alertas de todos los clientes</div></div>
+            <select id="af-alst" onchange="loadAdminAlertas()" style="padding:8px 13px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;font-family:'DM Sans',sans-serif">
+              <option value="OPEN">Abiertas</option><option value="IN_REVIEW">En revisión</option><option value="RESOLVED">Resueltas</option>
+            </select>
+          </div>
+          <div id="admin-alertas-list"></div>
+        </div>
+      </div>
+
+      <!-- EMPRESAS -->
+      <div id="admin-page-empresas" class="admin-page" style="display:none">
+        <div style="font-family:Sora,sans-serif;font-size:18px;font-weight:800;color:#1a3c6e;margin-bottom:16px">Empresas clientes</div>
+        <div id="admin-empresas-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px"></div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /admin-panel -->
+
+</body>
+</html>

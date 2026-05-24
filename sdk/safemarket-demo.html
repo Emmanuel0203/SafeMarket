@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SafeMarket SDK - Demo de Integración</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: #f4f7fb; color: #0f172a; }
+
+    /* Header */
+    .header { background: #1a3c6e; color: #fff; padding: 16px 32px; display: flex; align-items: center; gap: 12px; }
+    .header-logo { width: 36px; height: 36px; background: linear-gradient(135deg,#2563eb,#0d9488); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; }
+    .header-title { font-size: 18px; font-weight: 700; }
+    .header-sub { font-size: 13px; opacity: 0.7; margin-left: auto; }
+
+    /* Layout */
+    .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+    /* Cards */
+    .card { background: #fff; border-radius: 16px; padding: 24px; border: 1px solid #e2e8f0; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+    .card-title { font-size: 16px; font-weight: 700; color: #1a3c6e; margin-bottom: 6px; }
+    .card-sub { font-size: 13px; color: #64748b; margin-bottom: 20px; }
+
+    /* Formularios */
+    .form-group { margin-bottom: 14px; }
+    .form-label { font-size: 13px; font-weight: 600; color: #374151; display: block; margin-bottom: 5px; }
+    .form-input, .form-select {
+      width: 100%; padding: 10px 14px; border: 1.5px solid #e2e8f0;
+      border-radius: 10px; font-size: 14px; outline: none;
+      transition: border-color 0.2s; font-family: inherit; background: #fff;
+    }
+    .form-input:focus, .form-select:focus { border-color: #2563eb; }
+
+    /* Botones */
+    .btn { padding: 11px 20px; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; border: none; transition: all 0.2s; width: 100%; font-family: inherit; }
+    .btn-primary { background: linear-gradient(135deg,#1a3c6e,#2563eb); color: #fff; }
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .btn-secondary { background: #f1f5f9; color: #374151; }
+    .btn-secondary:hover { background: #e2e8f0; }
+    .btn-danger { background: linear-gradient(135deg,#dc2626,#ef4444); color: #fff; }
+
+    /* Resultado */
+    .result-box { background: #f8fafc; border-radius: 12px; padding: 16px; border: 1px solid #e2e8f0; margin-top: 16px; display: none; }
+    .result-box.visible { display: block; }
+    .result-decision { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+    .result-decision.APPROVE { color: #16a34a; }
+    .result-decision.MANUAL_REVIEW { color: #ca8a04; }
+    .result-decision.DECLINE { color: #dc2626; }
+    .result-row { display: flex; justify-content: space-between; font-size: 13px; padding: 6px 0; border-bottom: 1px solid #e2e8f0; }
+    .result-row:last-child { border-bottom: none; }
+    .result-key { color: #64748b; }
+    .result-val { font-weight: 600; color: #0f172a; }
+    .result-rules { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+    .result-rule-tag { background: #fee2e2; color: #dc2626; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 6px; }
+
+    /* Badge demo */
+    .badge-demo { display: flex; align-items: center; gap: 12px; padding: 14px; background: #f8fafc; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 10px; }
+    .badge-demo-info { flex: 1; }
+    .badge-demo-id { font-size: 12px; font-weight: 700; color: #1a3c6e; font-family: monospace; }
+    .badge-demo-amount { font-size: 14px; font-weight: 700; color: #0f172a; }
+    .badge-demo-type { font-size: 12px; color: #64748b; }
+
+    /* Code block */
+    .code-block { background: #0f172a; color: #e2e8f0; padding: 16px; border-radius: 10px; font-size: 12px; font-family: 'Courier New', monospace; overflow-x: auto; line-height: 1.6; margin-top: 12px; }
+    .code-comment { color: #64748b; }
+    .code-string { color: #86efac; }
+    .code-key { color: #93c5fd; }
+
+    /* Steps */
+    .step { display: flex; gap: 14px; margin-bottom: 16px; }
+    .step-num { width: 28px; height: 28px; background: #1a3c6e; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+    .step-content { flex: 1; }
+    .step-title { font-size: 14px; font-weight: 600; color: #0f172a; margin-bottom: 3px; }
+    .step-desc { font-size: 13px; color: #64748b; }
+
+    /* Alert */
+    .info-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 12px 16px; font-size: 13px; color: #1e40af; margin-bottom: 16px; }
+
+    h2 { font-size: 22px; font-weight: 800; color: #1a3c6e; margin-bottom: 6px; }
+    h3 { font-size: 14px; font-weight: 700; color: #374151; margin-bottom: 12px; }
+    p  { font-size: 14px; color: #64748b; line-height: 1.6; margin-bottom: 16px; }
+
+    .tag { display: inline-block; background: #dcfce7; color: #16a34a; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; margin-bottom: 16px; }
+    .separator { height: 1px; background: #e2e8f0; margin: 28px 0; }
+    .loader { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-logo">S</div>
+  <span class="header-title">SafeMarket SDK</span>
+  <span class="header-sub">Demo de Integración · v1.0.0</span>
+</div>
+
+<div class="container">
+
+  <!-- Intro -->
+  <div style="margin-bottom:28px">
+    <span class="tag">🔌 SDK Embebible</span>
+    <h2>Integra SafeMarket en cualquier plataforma</h2>
+    <p>Este demo muestra cómo una empresa (tienda online, fintech, banco) integraría SafeMarket con <strong>una sola línea de código</strong>. El widget aparece automáticamente y analiza transacciones en tiempo real.</p>
+    <div class="info-box">⚡ El panel flotante 🛡️ en la esquina inferior derecha es el widget de SafeMarket funcionando en esta página.</div>
+  </div>
+
+  <div class="grid">
+
+    <!-- ── COLUMNA IZQUIERDA ── -->
+    <div>
+
+      <!-- Widget 1: Analizar transacción -->
+      <div class="card" style="margin-bottom:24px">
+        <div class="card-title">🔍 Widget 1 — Analizador de Transacciones</div>
+        <div class="card-sub">Ingresa los datos de una transacción y SafeMarket la evalúa en tiempo real</div>
+
+        <div class="form-group">
+          <label class="form-label">Monto</label>
+          <input class="form-input" type="number" id="amount" placeholder="5000000" value="5000000"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tipo de transacción</label>
+          <select class="form-select" id="tx-type">
+            <option value="TRANSFER">TRANSFER — Transferencia</option>
+            <option value="PURCHASE">PURCHASE — Compra</option>
+            <option value="WITHDRAWAL">WITHDRAWAL — Retiro</option>
+            <option value="DEPOSIT">DEPOSIT — Depósito</option>
+          </select>
+        </div>
+        <div class="grid" style="gap:12px">
+          <div class="form-group">
+            <label class="form-label">Saldo origen antes</label>
+            <input class="form-input" type="number" id="old-bal" placeholder="5000000" value="5000000"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Saldo origen después</label>
+            <input class="form-input" type="number" id="new-bal" placeholder="0" value="0"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nivel de riesgo del comercio</label>
+          <select class="form-select" id="merchant-risk">
+            <option value="LOW">LOW — Bajo</option>
+            <option value="MEDIUM" selected>MEDIUM — Medio</option>
+            <option value="HIGH">HIGH — Alto</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">API Key</label>
+          <input class="form-input" type="text" id="api-key" placeholder="sm_live_xxxxxxxxxxxx" value="sm_demo_key"/>
+        </div>
+
+        <button class="btn btn-primary" id="btn-analyze" onclick="analyzeTransaction()">
+          Analizar Transacción
+        </button>
+
+        <div class="result-box" id="result-box">
+          <div class="result-decision" id="result-decision"></div>
+          <div id="result-rows"></div>
+          <div class="result-rules" id="result-rules"></div>
+        </div>
+      </div>
+
+      <!-- Widget 3: Modal de verificación -->
+      <div class="card">
+        <div class="card-title">🔔 Widget 3 — Modal de Verificación</div>
+        <div class="card-sub">Aparece automáticamente cuando una transacción está en REVIEW</div>
+        <p>Cuando SafeMarket detecta riesgo MEDIUM, en vez de bloquear directamente le pregunta al usuario si confirma la transacción.</p>
+        <div style="display:flex;gap:12px">
+          <button class="btn btn-secondary" onclick="showModalDemo('medium')">Ver modal REVIEW</button>
+          <button class="btn btn-danger" onclick="showModalDemo('high')" style="flex:1">Ver modal HIGH</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── COLUMNA DERECHA ── -->
+    <div>
+
+      <!-- Widget 2: Badges en lista -->
+      <div class="card" style="margin-bottom:24px">
+        <div class="card-title">🏷️ Widget 2 — Badges de Riesgo</div>
+        <div class="card-sub">Aparecen automáticamente junto a cada transacción en el sistema de la empresa</div>
+
+        <div id="badge-list">
+          <div class="badge-demo">
+            <div class="badge-demo-info">
+              <div class="badge-demo-id">TXN-A1B2C3</div>
+              <div class="badge-demo-amount">$350,000</div>
+              <div class="badge-demo-type">PURCHASE</div>
+            </div>
+            <span id="badge-1">⏳ cargando...</span>
+          </div>
+          <div class="badge-demo">
+            <div class="badge-demo-info">
+              <div class="badge-demo-id">TXN-D4E5F6</div>
+              <div class="badge-demo-amount">$5,000,000</div>
+              <div class="badge-demo-type">TRANSFER</div>
+            </div>
+            <span id="badge-2">⏳ cargando...</span>
+          </div>
+          <div class="badge-demo">
+            <div class="badge-demo-info">
+              <div class="badge-demo-id">TXN-G7H8I9</div>
+              <div class="badge-demo-amount">$180,000</div>
+              <div class="badge-demo-type">WITHDRAWAL</div>
+            </div>
+            <span id="badge-3">⏳ cargando...</span>
+          </div>
+        </div>
+        <button class="btn btn-secondary" style="margin-top:12px" onclick="loadBadges()">↻ Recargar badges</button>
+      </div>
+
+      <!-- Cómo integrar -->
+      <div class="card">
+        <div class="card-title">⚙️ Cómo integrar en tu plataforma</div>
+        <div class="card-sub">3 pasos, menos de 5 minutos</div>
+
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <div class="step-title">Incluye el script</div>
+            <div class="step-desc">Una línea en el HTML de tu plataforma</div>
+          </div>
+        </div>
+        <div class="code-block">
+<span class="code-comment">&lt;!-- Pega esto antes de &lt;/body&gt; --&gt;</span>
+&lt;script
+  src=<span class="code-string">"https://safemarket.co/sdk.js"</span>
+  data-api-key=<span class="code-string">"sm_live_tu_clave"</span>
+  data-position=<span class="code-string">"bottom-right"</span>&gt;
+&lt;/script&gt;</div>
+
+        <div class="step" style="margin-top:16px">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <div class="step-title">Analiza transacciones</div>
+            <div class="step-desc">Llama al SDK antes de procesar cada pago</div>
+          </div>
+        </div>
+        <div class="code-block">
+<span class="code-key">const</span> result = <span class="code-key">await</span> _safemarket.scoreTransaction({
+  <span class="code-key">amount</span>:           <span class="code-string">350000</span>,
+  <span class="code-key">transaction_type</span>: <span class="code-string">"PURCHASE"</span>,
+  <span class="code-key">user_id</span>:          <span class="code-string">"uuid-del-usuario"</span>,
+  <span class="code-key">old_balance_orig</span>: <span class="code-string">500000</span>,
+  <span class="code-key">new_balance_orig</span>: <span class="code-string">150000</span>,
+});
+
+<span class="code-key">if</span> (result.decision === <span class="code-string">"APPROVE"</span>) procesarPago();
+<span class="code-key">if</span> (result.decision === <span class="code-string">"DECLINE"</span>) bloquearPago();</div>
+
+        <div class="step" style="margin-top:16px">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <div class="step-title">Los widgets aparecen solos</div>
+            <div class="step-desc">El panel flotante y los badges se activan automáticamente</div>
+          </div>
+        </div>
+
+        <div class="separator"></div>
+
+        <h3>Compatibilidad</h3>
+        <div class="grid-3">
+          <div style="text-align:center;padding:10px;background:#f8fafc;border-radius:10px;font-size:13px;border:1px solid #e2e8f0">🛍️<br><strong>Shopify</strong></div>
+          <div style="text-align:center;padding:10px;background:#f8fafc;border-radius:10px;font-size:13px;border:1px solid #e2e8f0">🌐<br><strong>WooCommerce</strong></div>
+          <div style="text-align:center;padding:10px;background:#f8fafc;border-radius:10px;font-size:13px;border:1px solid #e2e8f0">⚛️<br><strong>React</strong></div>
+          <div style="text-align:center;padding:10px;background:#f8fafc;border-radius:10px;font-size:13px;border:1px solid #e2e8f0">🅰️<br><strong>Angular</strong></div>
+          <div style="text-align:center;padding:10px;background:#f8fafc;border-radius:10px;font-size:13px;border:1px solid #e2e8f0">💚<br><strong>Vue</strong></div>
+          <div style="text-align:center;padding:10px;background:#f8fafc;border-radius:10px;font-size:13px;border:1px solid #e2e8f0">📄<br><strong>HTML puro</strong></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SDK de SafeMarket -->
+<script src="safemarket-sdk.js" data-api-key="sm_demo_key"></script>
+
+<script>
+  const API_URL = 'http://localhost:8000';
+
+  // ── Simular resultados del SDK (para el demo sin backend) ─────────────
+  function mockScore(amount, type, oldBal, newBal, merchantRisk) {
+    let score = 0.1;
+    if (type === 'TRANSFER' || type === 'WITHDRAWAL') score += 0.15;
+    if (oldBal > 0 && newBal === 0) score += 0.45;
+    if (amount > 1000000) score += 0.15;
+    if (amount % 1000000 === 0 && amount >= 1000000) score += 0.10;
+    if (merchantRisk === 'HIGH') score += 0.15;
+    score = Math.min(1, score);
+
+    const decision   = score < 0.35 ? 'APPROVE' : score < 0.60 ? 'MANUAL_REVIEW' : 'DECLINE';
+    const risk_level = score < 0.35 ? 'low'     : score < 0.60 ? 'medium'        : 'high';
+    const rules      = [];
+    if (type === 'TRANSFER' || type === 'WITHDRAWAL') rules.push('HIGH_RISK_TYPE');
+    if (oldBal > 0 && newBal === 0) rules.push('ACCOUNT_DRAIN');
+    if (amount > 1000000) rules.push('HIGH_AMOUNT');
+    if (amount % 1000000 === 0 && amount >= 1000000) rules.push('ROUND_AMOUNT');
+    if (merchantRisk === 'HIGH') rules.push('HIGH_RISK_MERCHANT');
+
+    return { overall_score: score, fraud_probability: score * 100, decision, risk_level, triggered_rules: rules };
+  }
+
+  // ── Analizar transacción ──────────────────────────────────────────────
+  async function analyzeTransaction() {
+    const btn    = document.getElementById('btn-analyze');
+    const amount = parseFloat(document.getElementById('amount').value) || 0;
+    const type   = document.getElementById('tx-type').value;
+    const oldBal = parseFloat(document.getElementById('old-bal').value) || 0;
+    const newBal = parseFloat(document.getElementById('new-bal').value) || 0;
+    const mRisk  = document.getElementById('merchant-risk').value;
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loader"></span> Analizando...';
+
+    await new Promise(r => setTimeout(r, 900)); // simula latencia
+
+    const result = mockScore(amount, type, oldBal, newBal, mRisk);
+
+    const box  = document.getElementById('result-box');
+    const dec  = document.getElementById('result-decision');
+    const rows = document.getElementById('result-rows');
+    const ruls = document.getElementById('result-rules');
+
+    const decLabel = { APPROVE: '✅ APROBADA', MANUAL_REVIEW: '⚠️ EN REVISIÓN', DECLINE: '🚫 BLOQUEADA' };
+    dec.textContent  = decLabel[result.decision] || result.decision;
+    dec.className    = `result-decision ${result.decision}`;
+
+    rows.innerHTML = `
+      <div class="result-row"><span class="result-key">Score de riesgo</span><span class="result-val">${(result.overall_score * 100).toFixed(0)}%</span></div>
+      <div class="result-row"><span class="result-key">Probabilidad fraude</span><span class="result-val">${result.fraud_probability.toFixed(1)}%</span></div>
+      <div class="result-row"><span class="result-key">Nivel de riesgo</span><span class="result-val">${result.risk_level.toUpperCase()}</span></div>
+      <div class="result-row"><span class="result-key">Reglas disparadas</span><span class="result-val">${result.triggered_rules.length}</span></div>
+    `;
+
+    ruls.innerHTML = result.triggered_rules.map(r =>
+      `<span class="result-rule-tag">${r}</span>`
+    ).join('');
+
+    box.classList.add('visible');
+
+    // Agregar al panel del widget
+    if (result.decision !== 'APPROVE' && window._safemarket) {
+      window._safemarket._addAlert({
+        id:         Date.now(),
+        decision:   result.decision,
+        risk_level: result.risk_level,
+        score:      result.overall_score,
+        probability: result.fraud_probability,
+        amount,
+        type,
+        rules:      result.triggered_rules,
+        time:       new Date(),
+      });
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = 'Analizar Transacción';
+  }
+
+  // ── Cargar badges ─────────────────────────────────────────────────────
+  async function loadBadges() {
+    const txs = [
+      { id: 'badge-1', amount: 350000,   type: 'PURCHASE',   oldBal: 500000,   newBal: 150000, mRisk: 'LOW' },
+      { id: 'badge-2', amount: 5000000,  type: 'TRANSFER',   oldBal: 5000000,  newBal: 0,      mRisk: 'HIGH' },
+      { id: 'badge-3', amount: 180000,   type: 'WITHDRAWAL', oldBal: 1000000,  newBal: 820000, mRisk: 'MEDIUM' },
+    ];
+
+    for (const tx of txs) {
+      const el = document.getElementById(tx.id);
+      el.textContent = '⏳ analizando...';
+      await new Promise(r => setTimeout(r, 600 + Math.random() * 400));
+
+      const result = mockScore(tx.amount, tx.type, tx.oldBal, tx.newBal, tx.mRisk);
+      const map = {
+        low:    { cls: 'sm-badge sm-badge-low',    label: '✅ Bajo riesgo' },
+        medium: { cls: 'sm-badge sm-badge-medium', label: '⚠️ Riesgo medio' },
+        high:   { cls: 'sm-badge sm-badge-high',   label: '🚫 Alto riesgo' },
+      };
+      const { cls, label } = map[result.risk_level] || map.low;
+      el.className   = `sm-widget ${cls}`;
+      el.innerHTML   = `<span class="sm-badge-dot"></span>${label} · ${(result.overall_score * 100).toFixed(0)}%`;
+    }
+  }
+
+  // ── Modal demo ────────────────────────────────────────────────────────
+  function showModalDemo(level) {
+    if (!window._safemarket) return;
+    window._safemarket.showVerificationModal(
+      { risk_level: level, fraud_probability: level === 'high' ? 78.4 : 42.1, overall_score: level === 'high' ? 0.784 : 0.421 },
+      (r) => alert('✅ Transacción confirmada por el usuario'),
+      (r) => alert('❌ Transacción cancelada por el usuario'),
+    );
+  }
+
+  // ── Auto-cargar badges al iniciar ─────────────────────────────────────
+  window.addEventListener('load', () => {
+    setTimeout(loadBadges, 500);
+  });
+</script>
+
+</body>
+</html>
